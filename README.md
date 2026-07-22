@@ -1,0 +1,87 @@
+# TripSplit — Internship-Scope Build
+
+A trimmed-down, learnable version of the full TripSplit architecture: one trip, equal-split
+expenses, automatic balance tracking, and the minimum-transaction settlement algorithm. See the
+project's earlier design docs for the full production version this is scaled down from — this
+build deliberately skips multi-currency, loans, receipts, exports, and Clean Architecture's full
+layering in favor of something a single person can build and understand end to end in a few weeks.
+
+## What's here
+
+```
+backend/     ASP.NET Core 9 Web API (C#), SQL Server, JWT auth, 3-layer architecture
+frontend/    Angular 22 app (standalone components, signals)
+```
+
+## Backend — first run
+
+**Requirements:** .NET 9 SDK, Visual Studio 2022 (17.12+) or `dotnet` CLI, and a SQL Server instance
+— LocalDB (installed automatically with the "ASP.NET and web development" workload in Visual
+Studio), SQL Server Express, or a full SQL Server you manage in SSMS all work.
+
+1. Open `backend/TripSplit.Api.csproj` in Visual Studio (or `cd backend` in a terminal).
+2. Check `appsettings.json` → `ConnectionStrings:DefaultConnection`. It defaults to LocalDB
+   (`Server=(localdb)\mssqllocaldb;...`), which needs no setup if you have Visual Studio installed.
+   If you'd rather point at a named instance you manage in SSMS, replace it with something like
+   `Server=localhost\SQLEXPRESS;Database=TripSplitDb;Trusted_Connection=True;TrustServerCertificate=True;`
+   — see the `_comment` key alongside it for the SQL-auth variant.
+3. Restore + run:
+   ```
+   dotnet restore
+   dotnet run
+   ```
+4. On first run, the app creates the `TripSplitDb` database (and every table) automatically via
+   `Database.EnsureCreated()` instead of real EF Core migrations — a deliberate simplification for
+   this scope (see the comment in `Program.cs`). Because of that, if you ever change a model
+   (add/rename a column) after the database already exists, `EnsureCreated()` will NOT alter it —
+   you'll need to drop `TripSplitDb` (e.g. in SSMS, or `DROP DATABASE TripSplitDb;`) and let it
+   recreate on the next run, or switch to `dotnet ef migrations add InitialCreate`.
+5. The API listens on `http://localhost:5080` (see `Properties/launchSettings.json`). Swagger UI
+   opens automatically at `http://localhost:5080/swagger` — use it to register a user, log in,
+   copy the returned token, and click "Authorize" (top right) pasting `Bearer <token>` to test the
+   rest of the endpoints manually before the frontend is running.
+
+**Before running for real:** open `appsettings.json` and replace the placeholder `Jwt:Key` value
+with your own long random string. The placeholder is fine for local development only.
+
+**A note on how this was built:** every backend file here was hand-written rather than scaffolded
+with `dotnet new` / `dotnet ef`, because the sandbox this was built in doesn't have the .NET SDK
+installed — so I could not run `dotnet build` myself to confirm it compiles. I reviewed the code
+carefully (including one real bug I caught and fixed: ASP.NET Core's JWT handler silently renames
+the `sub` claim unless you set `MapInboundClaims = false`, which would have broken
+`GetUserId()` on every request). Please run `dotnet build` as your first step and tell me about
+any compiler errors — I'll fix them immediately.
+
+## Frontend — first run
+
+**Requirements:** Node.js 20+ (you already have this).
+
+1. `cd frontend`
+2. `npm install`
+3. `npm start` (runs `ng serve`) — opens at `http://localhost:4200`
+
+The frontend expects the backend running at `http://localhost:5080` (set in
+`src/app/core/api.config.ts` — change `API_BASE_URL` there if you run the backend on a different
+port). CORS is already configured on the backend for `http://localhost:4200`.
+
+**This part I *did* verify end-to-end:** I installed dependencies and ran `ng build` in an
+isolated copy of this code, and it compiled cleanly with no TypeScript or template errors. Two
+files (`app.ts` and `styles.scss`, both edited from the CLI-generated defaults) may show up as
+their old scaffolded content for a little while after this session ends — that's OneDrive still
+syncing the edit down to your machine, not a problem with the code. If they still look wrong a few
+minutes after opening the folder, let me know and I'll rewrite them.
+
+## Trying it out
+
+1. Register two accounts (e.g. `alice@test.com` / `bob@test.com`) via the frontend's Register page.
+2. Log in as Alice, create a trip.
+3. Add Bob as a member by his email (he must already have registered).
+4. Add an expense — e.g. Alice pays $30 for lunch, split between both of you.
+5. Check the Balances and Settlement plan sections update automatically.
+
+## What's deliberately not here
+
+Multi-currency, direct loans between members, receipts/file uploads, PDF/Excel export, email
+notifications, recurring expenses, and EF Core migrations. All of these exist in the full
+production architecture doc — none of them are needed to demonstrate the core idea (splitting,
+balances, minimum-transaction settlement) at internship scope.

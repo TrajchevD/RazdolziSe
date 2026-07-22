@@ -1,0 +1,46 @@
+<div class="auth-card">
+  <h1>Create an account</h1>
+
+  <form (ngSubmit)="submit()">
+    <label>
+      Display name
+      <input type="text" name="displayName" [(ngModel)]="displayName" required />
+    </label>
+
+    <label>
+      Email
+      <input type="email" name="email" [(ngModel)]="email" required />
+    </label>
+
+    <label>
+      Password
+      <div class="password-field">
+        <input
+          [type]="showPassword() ? 'text' : 'password'"
+          name="password"
+          [(ngModel)]="password"
+          required
+          minlength="8"
+        />
+        <button
+          type="button"
+          class="toggle-visibility"
+          (click)="showPassword.set(!showPassword())"
+          [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+        >
+          {{ showPassword() ? 'Hide' : 'Show' }}
+        </button>
+      </div>
+    </label>
+
+    @if (errorMessage()) {
+      <p class="error">{{ errorMessage() }}</p>
+    }
+
+    <button type="submit" [disabled]="isSubmitting()">
+      {{ isSubmitting() ? 'Creating account…' : 'Register' }}
+    </button>
+  </form>
+
+  <p>Already have an account? <a routerLink="/login">Log in</a></p>
+</div>

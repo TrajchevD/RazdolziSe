@@ -1,0 +1,799 @@
+@if (pageError()) {
+  <div class="page">
+    <p class="error">{{ pageError() }}</p>
+    <button type="button" (click)="loadAll()">Retry</button>
+    <a routerLink="/trips">&larr; Back to trips</a>
+  </div>
+} @else if (!trip()) {
+  @if (viewport.isMobile()) {
+    <div class="mobile-trip-page" aria-hidden="true">
+      <div class="skeleton" style="width: 50%; height: 1.3rem; margin-bottom: 1rem;"></div>
+      <div class="skeleton" style="height: 92px; border-radius: 12px; margin-bottom: 0.75rem;"></div>
+      <div class="skeleton" style="height: 44px; border-radius: 8px; margin-bottom: 1rem;"></div>
+      <div class="skeleton" style="height: 38px; border-radius: 8px; margin-bottom: 1rem;"></div>
+      <div class="skeleton" style="height: 60px; border-radius: 10px; margin-bottom: 0.5rem;"></div>
+      <div class="skeleton" style="height: 60px; border-radius: 10px;"></div>
+    </div>
+  } @else {
+    <div class="page">
+      <p class="muted">Loading trip…</p>
+    </div>
+  }
+} @else if (trip(); as t) {
+  @if (viewport.isMobile()) {
+    <div class="mobile-trip-page">
+      <header class="mobile-trip-header">
+        <a routerLink="/trips" class="icon-button">&larr;</a>
+        <h1>{{ t.name }}</h1>
+        <button type="button" class="icon-button" (click)="openMembers()" title="Members">👥</button>
+      </header>
+
+      <div class="summary-card">
+        <div class="summary-item">
+          <span class="label">Total</span>
+          <span class="value">{{ groupTotal() | number: '1.2-2' }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Avg / person</span>
+          <span class="value">{{ groupAverage() | number: '1.2-2' }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Your balance</span>
+          <span class="value" [class.positive]="myBalance() > 0" [class.negative]="myBalance() < 0">
+            {{ myBalance() >= 0 ? '+' : '' }}{{ myBalance() | number: '1.2-2' }}
+          </span>
+        </div>
+      </div>
+
+      <button type="button" class="settle-up-cta" (click)="openSettleUp()">Settle up</button>
+
+      <div class="tabs">
+        <button type="button" [class.active]="activeTab() === 'expenses'" (click)="activeTab.set('expenses')">Expenses</button>
+        <button type="button" [class.active]="activeTab() === 'balances'" (click)="activeTab.set('balances')">Balances</button>
+        <button type="button" [class.active]="activeTab() === 'activity'" (click)="activeTab.set('activity')">Activity</button>
+        <button type="button" [class.active]="activeTab() === 'categories'" (click)="activeTab.set('categories')">Categories</button>
+      </div>
+
+      @if (activeTab() === 'expenses') {
+        <div class="tab-panel">
+          @if (expenses().length === 0) {
+            <p class="muted">No expenses yet — tap + to add one.</p>
+          } @else {
+            @for (group of expensesByDate(); track group.key) {
+              <h3 class="date-heading">{{ group.label }}</h3>
+              <ul class="mobile-expense-list">
+                @for (expense of group.expenses; track expense.id) {
+                  <li [class.editable]="canEditExpense(expense)" (click)="openEditExpense(expense)">
+                    <span class="category-tile" [style.background]="getCategoryMeta(expense.category).color">{{
+                      getCategoryMeta(expense.category).tile
+                    }}</span>
+                    <span class="expense-info">
+                      <span class="expense-title">{{ expense.description }}</span>
+                      <span class="expense-sub muted">{{ paidByLabel(expense) }} · split {{ expense.shares.length }} ways</span>
+                    </span>
+                    <span class="expense-amounts">
+                      <span class="expense-total">{{ expense.amount | number: '1.2-2' }}</span>
+                      @if (myShareOf(expense) !== null) {
+                        <span class="expense-share muted">your share {{ myShareOf(expense) | number: '1.2-2' }}</span>
+                      }
+                    </span>
+                  </li>
+                }
+              </ul>
+            }
+          }
+        </div>
+      }
+
+      @if (activeTab() === 'balances') {
+        <div class="tab-panel">
+          @if (balances().length === 0) {
+            <p class="muted">No balances yet.</p>
+          } @else {
+            <ul class="mobile-balance-list">
+              @for (balance of balances(); track balance.tripMemberId) {
+                <li>
+                  <span class="mini-avatar" [style.background]="avatarColor(balance.tripMemberId)">{{
+                    initials(balance.displayName)
+                  }}</span>
+                  <span class="balance-name">{{ balance.displayName }}</span>
+                  <span class="balance-amount" [class.positive]="balance.netBalance > 0" [class.negative]="balance.netBalance < 0">
+                    {{ balance.netBalance >= 0 ? '+' : '' }}{{ balance.netBalance | number: '1.2-2' }}
+                  </span>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
+
+      @if (activeTab() === 'activity') {
+        <div class="tab-panel">
+          @if (activity().length === 0) {
+            <p class="muted">No activity yet.</p>
+          } @else {
+            <ul class="mobile-activity-list">
+              @for (item of activity(); track item.kind + (item.kind === 'expense' ? item.expense.id : item.payment.id)) {
+                @if (item.kind === 'expense') {
+                  <li [class.editable]="canEditExpense(item.expense)" (click)="openEditExpense(item.expense)">
+                    <span class="dot"></span>
+                    <span class="activity-info">
+                      <span class="activity-title">{{ item.expense.description }}</span>
+                      <span class="activity-sub muted">{{ paidByLabel(item.expense) }} · split {{ item.expense.shares.length }} ways</span>
+                    </span>
+                    <span class="activity-amount">{{ item.expense.amount | number: '1.2-2' }}</span>
+                  </li>
+                } @else {
+                  <li>
+                    <span class="dot settled"></span>
+                    <span class="activity-info">
+                      <span class="activity-title">{{ item.payment.fromDisplayName }} paid {{ item.payment.toDisplayName }}</span>
+                      <span class="activity-sub muted">Settled up</span>
+                    </span>
+                    <span class="activity-amount">{{ item.payment.amount | number: '1.2-2' }}</span>
+                  </li>
+                }
+              }
+            </ul>
+          }
+        </div>
+      }
+
+      @if (activeTab() === 'categories') {
+        <div class="tab-panel">
+        <label class="field-label" for="mScope">Showing</label>
+        <select id="mScope" name="mScope" [ngModel]="overviewScope()" (ngModelChange)="overviewScope.set($event)">
+          <option value="group">Whole group</option>
+          @for (member of t.members; track member.tripMemberId) {
+            <option [value]="member.tripMemberId">{{ member.displayName }}'s share</option>
+          }
+        </select>
+
+        @if (categoryBreakdown().total <= 0) {
+          <p class="muted">No expenses to break down yet.</p>
+        } @else {
+          <div class="pie-wrap">
+            <svg viewBox="0 0 140 140" class="pie-chart">
+              <circle cx="70" cy="70" r="60" fill="none" stroke="#ebebe8" stroke-width="20" />
+              @for (slice of pieSlices(); track slice.category.value) {
+                <circle
+                  cx="70"
+                  cy="70"
+                  r="60"
+                  fill="none"
+                  stroke-width="20"
+                  [attr.stroke]="slice.category.color"
+                  [attr.stroke-dasharray]="slice.dashArray"
+                  [attr.stroke-dashoffset]="slice.dashOffset"
+                  transform="rotate(-90 70 70)"
+                />
+              }
+            </svg>
+            <div class="pie-center">
+              <span class="pie-total">{{ categoryBreakdown().total | number: '1.2-2' }}</span>
+              <span class="muted">total</span>
+            </div>
+          </div>
+
+          <ul class="pie-legend">
+            @for (slice of pieSlices(); track slice.category.value) {
+              <li>
+                <span class="legend-dot" [style.background]="slice.category.color"></span>
+                <span class="legend-label">{{ slice.category.label }}</span>
+                <span class="legend-amount">{{ slice.amount | number: '1.2-2' }}</span>
+                <span class="legend-percent muted">{{ slice.fraction * 100 | number: '1.0-0' }}%</span>
+              </li>
+            }
+          </ul>
+        }
+        </div>
+      }
+
+      <button type="button" class="fab" (click)="openAddExpense()">+</button>
+    </div>
+
+    @if (showAddExpense()) {
+      <div class="overlay">
+        <form (ngSubmit)="addExpense()">
+          <header class="overlay-header">
+            <button type="button" class="text-button" (click)="cancelEditExpense()">Cancel</button>
+            <h2>{{ editingExpenseId() ? 'Edit expense' : 'Add expense' }}</h2>
+            <button type="submit" class="text-button save" [disabled]="isSavingExpense()">
+              {{ isSavingExpense() ? '…' : 'Save' }}
+            </button>
+          </header>
+
+          <div class="overlay-body">
+            <label class="field-label" for="mDescription">Description</label>
+            <input
+              id="mDescription"
+              type="text"
+              name="mDescription"
+              placeholder="What was this for?"
+              [(ngModel)]="expenseDescription"
+              required
+            />
+
+            <label class="field-label" for="mAmount">Amount</label>
+            <div class="amount-input">
+              <span class="currency">$</span>
+              <input id="mAmount" type="number" step="0.01" min="0" name="mAmount" [(ngModel)]="expenseAmount" required />
+            </div>
+
+            <label class="field-label" for="mDate">Date</label>
+            <input id="mDate" type="date" name="mDate" [(ngModel)]="expenseDateInput" required />
+
+            <span class="field-label">Category</span>
+            <div class="category-chips">
+              @for (cat of categories; track cat.value) {
+                <button
+                  type="button"
+                  class="chip"
+                  [class.selected]="expenseCategory === cat.value"
+                  (click)="expenseCategory = cat.value"
+                >
+                  <span class="chip-tile" [style.background]="cat.color">{{ cat.tile }}</span>
+                  {{ cat.label }}
+                </button>
+              }
+            </div>
+
+            <span class="field-label">Paid by</span>
+            <div class="avatar-picker">
+              @for (member of t.members; track member.tripMemberId) {
+                <button
+                  type="button"
+                  class="avatar-option"
+                  [class.selected]="expensePaidBy === member.tripMemberId"
+                  (click)="expensePaidBy = member.tripMemberId"
+                >
+                  <span class="mini-avatar" [style.background]="avatarColor(member.tripMemberId)">{{
+                    initials(member.displayName)
+                  }}</span>
+                  <span class="avatar-name">{{ member.displayName }}</span>
+                </button>
+              }
+            </div>
+
+            <span class="field-label">Split</span>
+            <div class="split-toggle">
+              <button type="button" [class.active]="splitType === 'Equal'" (click)="splitType = 'Equal'">Equal</button>
+              <button type="button" [class.active]="splitType === 'Exact'" (click)="splitType = 'Exact'">Custom</button>
+            </div>
+
+            @if (splitType === 'Equal') {
+              <ul class="split-list">
+                @for (member of t.members; track member.tripMemberId) {
+                  <li>
+                    <span class="mini-avatar" [style.background]="avatarColor(member.tripMemberId)">{{
+                      initials(member.displayName)
+                    }}</span>
+                    <span class="split-name">{{ member.displayName }}</span>
+                    <button
+                      type="button"
+                      class="check-toggle"
+                      [class.checked]="expenseParticipants.has(member.tripMemberId)"
+                      (click)="toggleParticipant(member.tripMemberId, !expenseParticipants.has(member.tripMemberId))"
+                    >
+                      ✓
+                    </button>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <ul class="split-list exact">
+                @for (member of t.members; track member.tripMemberId) {
+                  <li>
+                    <span class="mini-avatar" [style.background]="avatarColor(member.tripMemberId)">{{
+                      initials(member.displayName)
+                    }}</span>
+                    <span class="split-name">{{ member.displayName }}</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      name="mExact-{{ member.tripMemberId }}"
+                      [(ngModel)]="exactAmounts[member.tripMemberId]"
+                      [ngModelOptions]="{ standalone: true }"
+                    />
+                  </li>
+                }
+              </ul>
+              <p class="muted" [class.error]="!exactIsBalanced">
+                Entered {{ exactTotal | number: '1.2-2' }} of {{ (expenseAmount ?? 0) | number: '1.2-2' }}
+              </p>
+            }
+
+            @if (expenseError()) {
+              <p class="error">{{ expenseError() }}</p>
+            }
+          </div>
+
+          <div class="overlay-footer">
+            <button type="submit" class="primary-button" [disabled]="isSavingExpense()">
+              {{ isSavingExpense() ? 'Saving…' : editingExpenseId() ? 'Save changes' : 'Save expense' }}
+            </button>
+            @if (editingExpense(); as current) {
+              <button
+                type="button"
+                class="danger-button"
+                [disabled]="deletingExpenseId() === current.id"
+                (click)="deleteExpense(current)"
+              >
+                {{ deletingExpenseId() === current.id ? 'Deleting…' : 'Delete expense' }}
+              </button>
+            }
+          </div>
+        </form>
+      </div>
+    }
+
+    @if (showSettleUp()) {
+      <div class="overlay">
+        <header class="overlay-header">
+          <button type="button" class="icon-button" (click)="closeSettleUp()">&larr;</button>
+          <div class="overlay-title">
+            <h2>Settle up</h2>
+            <span class="muted">{{ t.name }} · {{ t.members.length }} people</span>
+          </div>
+          <span class="spacer"></span>
+        </header>
+
+        <div class="overlay-body">
+          @if (settlementError()) {
+            <p class="error">{{ settlementError() }}</p>
+          }
+
+          <h3 class="section-label">Suggested payments</h3>
+          @if (settlementPlan().length === 0) {
+            <p class="muted">Everyone is settled up.</p>
+          } @else {
+            <ul class="suggested-list">
+              @for (txn of settlementPlan(); track txn.fromTripMemberId + txn.toTripMemberId) {
+                <li>
+                  <span class="mini-avatar" [style.background]="avatarColor(txn.fromTripMemberId)">{{
+                    initials(txn.fromDisplayName)
+                  }}</span>
+                  <span class="arrow">&rarr;</span>
+                  <span class="mini-avatar" [style.background]="avatarColor(txn.toTripMemberId)">{{
+                    initials(txn.toDisplayName)
+                  }}</span>
+                  <span class="txn-text">
+                    {{ txn.fromDisplayName }} owes {{ txn.toDisplayName }}<br />
+                    <strong>{{ txn.amount | number: '1.2-2' }}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    class="settle-button"
+                    [disabled]="settlingKey() === txn.fromTripMemberId + ':' + txn.toTripMemberId"
+                    (click)="settleUp(txn)"
+                  >
+                    {{ settlingKey() === txn.fromTripMemberId + ':' + txn.toTripMemberId ? '…' : 'Settle' }}
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+
+          <h3 class="section-label">Balances</h3>
+          <ul class="mobile-balance-list">
+            @for (balance of balances(); track balance.tripMemberId) {
+              <li>
+                <span class="mini-avatar" [style.background]="avatarColor(balance.tripMemberId)">{{
+                  initials(balance.displayName)
+                }}</span>
+                <span class="balance-name">{{ balance.displayName }}</span>
+                <span class="balance-amount" [class.positive]="balance.netBalance > 0" [class.negative]="balance.netBalance < 0">
+                  {{ balance.netBalance >= 0 ? '+' : '' }}{{ balance.netBalance | number: '1.2-2' }}
+                </span>
+              </li>
+            }
+          </ul>
+
+          <h3 class="section-label">Recent activity</h3>
+          @if (payments().length === 0) {
+            <p class="muted">No payments recorded yet.</p>
+          } @else {
+            <ul class="mobile-activity-list">
+              @for (payment of payments().slice(0, 5); track payment.id) {
+                <li>
+                  <span class="dot settled"></span>
+                  <span class="activity-info">
+                    <span class="activity-title">{{ payment.fromDisplayName }} paid {{ payment.toDisplayName }}</span>
+                  </span>
+                  <span class="activity-amount">{{ payment.amount | number: '1.2-2' }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+    }
+
+    @if (showMembers()) {
+      <div class="overlay">
+        <header class="overlay-header">
+          <button type="button" class="icon-button" (click)="closeMembers()">&larr;</button>
+          <h2>Members</h2>
+          <span class="spacer"></span>
+        </header>
+
+        <div class="overlay-body">
+          <ul class="mobile-balance-list">
+            @for (member of t.members; track member.tripMemberId) {
+              <li>
+                <span class="mini-avatar" [style.background]="avatarColor(member.tripMemberId)">{{
+                  initials(member.displayName)
+                }}</span>
+                <span class="balance-name">
+                  {{ member.displayName }}
+                  @if (!member.userId) {
+                    <span class="muted">(guest)</span>
+                  }
+                </span>
+              </li>
+            }
+          </ul>
+
+          <div class="add-form-card">
+            <h3 class="section-label">Add a member</h3>
+            <form (ngSubmit)="addMember()">
+              <input type="email" placeholder="Add member by email" name="mMemberEmail" [(ngModel)]="newMemberEmail" required />
+              <button type="submit" class="primary-button" [disabled]="isSavingMember()">
+                {{ isSavingMember() ? '…' : 'Add' }}
+              </button>
+            </form>
+            @if (memberError()) {
+              <p class="error">{{ memberError() }}</p>
+            }
+            <p class="muted">The person needs to have already registered an account before you can add them this way.</p>
+          </div>
+
+          <div class="add-form-card">
+            <h3 class="section-label">Add a guest</h3>
+            <form (ngSubmit)="addGuest()">
+              <input type="text" placeholder="Guest name (no account needed)" name="mGuestName" [(ngModel)]="newGuestName" required />
+              <button type="submit" class="primary-button" [disabled]="isSavingGuest()">
+                {{ isSavingGuest() ? '…' : 'Add guest' }}
+              </button>
+            </form>
+            @if (guestError()) {
+              <p class="error">{{ guestError() }}</p>
+            }
+            <p class="muted">Guests can be split with and owe/are owed money like anyone else — they just don't log in.</p>
+          </div>
+        </div>
+      </div>
+    }
+  } @else {
+    <div class="page">
+      <header>
+        <a routerLink="/trips">&larr; All trips</a>
+        <h1>{{ t.name }}</h1>
+      </header>
+
+      <section class="members">
+        <h2>Members</h2>
+        <ul class="mobile-balance-list desktop-member-list">
+          @for (member of t.members; track member.tripMemberId) {
+            <li>
+              <span class="mini-avatar" [style.background]="avatarColor(member.tripMemberId)">{{
+                initials(member.displayName)
+              }}</span>
+              <span class="balance-name">
+                {{ member.displayName }}
+                @if (!member.userId) {
+                  <span class="muted">(guest)</span>
+                }
+              </span>
+            </li>
+          }
+        </ul>
+
+        <div class="desktop-add-forms">
+          <div class="add-form-card">
+            <h3 class="section-label">Add a member</h3>
+            <form (ngSubmit)="addMember()">
+              <input type="email" placeholder="Add member by email" name="memberEmail" [(ngModel)]="newMemberEmail" required />
+              <button type="submit" class="primary-button" [disabled]="isSavingMember()">
+                {{ isSavingMember() ? '…' : 'Add' }}
+              </button>
+            </form>
+            @if (memberError()) {
+              <p class="error">{{ memberError() }}</p>
+            }
+            <p class="muted">The person needs to have already registered an account before you can add them this way.</p>
+          </div>
+
+          <div class="add-form-card">
+            <h3 class="section-label">Add a guest</h3>
+            <form (ngSubmit)="addGuest()">
+              <input type="text" placeholder="Guest name (no account needed)" name="guestName" [(ngModel)]="newGuestName" required />
+              <button type="submit" class="primary-button" [disabled]="isSavingGuest()">
+                {{ isSavingGuest() ? '…' : 'Add guest' }}
+              </button>
+            </form>
+            @if (guestError()) {
+              <p class="error">{{ guestError() }}</p>
+            }
+            <p class="muted">Guests can be split with and owe/are owed money like anyone else — they just don't log in.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="add-expense">
+        <h2>{{ editingExpenseId() ? 'Edit expense' : 'Add expense' }}</h2>
+        <form (ngSubmit)="addExpense()">
+          <label>
+            Description
+            <input type="text" name="description" [(ngModel)]="expenseDescription" required />
+          </label>
+
+          <label>
+            Amount
+            <input type="number" step="0.01" min="0" name="amount" [(ngModel)]="expenseAmount" required />
+          </label>
+
+          <label>
+            Date
+            <input type="date" name="date" [(ngModel)]="expenseDateInput" required />
+          </label>
+
+          <label>
+            Paid by
+            <select name="paidBy" [(ngModel)]="expensePaidBy">
+              @for (member of t.members; track member.tripMemberId) {
+                <option [value]="member.tripMemberId">{{ member.displayName }}</option>
+              }
+            </select>
+          </label>
+
+          <label>
+            Category
+            <select name="category" [(ngModel)]="expenseCategory">
+              @for (cat of categories; track cat.value) {
+                <option [value]="cat.value">{{ cat.label }}</option>
+              }
+            </select>
+          </label>
+
+          <label>
+            Split
+            <select name="splitType" [(ngModel)]="splitType">
+              <option value="Equal">Split equally</option>
+              <option value="Exact">Custom amounts per person</option>
+            </select>
+          </label>
+
+          @if (splitType === 'Equal') {
+            <fieldset>
+              <legend>Split equally between</legend>
+              @for (member of t.members; track member.tripMemberId) {
+                <label class="checkbox">
+                  <input
+                    type="checkbox"
+                    [checked]="expenseParticipants.has(member.tripMemberId)"
+                    (change)="toggleParticipant(member.tripMemberId, $any($event.target).checked)"
+                  />
+                  {{ member.displayName }}
+                </label>
+              }
+            </fieldset>
+          } @else {
+            <fieldset>
+              <legend>Enter each person's exact amount</legend>
+              @for (member of t.members; track member.tripMemberId) {
+                <label class="exact-row">
+                  <span>{{ member.displayName }}</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    name="exact-{{ member.tripMemberId }}"
+                    [(ngModel)]="exactAmounts[member.tripMemberId]"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </label>
+              }
+              <p class="muted" [class.error]="!exactIsBalanced">
+                Entered {{ exactTotal | number: '1.2-2' }} of {{ (expenseAmount ?? 0) | number: '1.2-2' }}
+                @if (!exactIsBalanced) {
+                  ({{ exactRemaining > 0 ? 'unallocated' : 'over by' }}
+                  {{ (exactRemaining < 0 ? -exactRemaining : exactRemaining) | number: '1.2-2' }})
+                }
+              </p>
+            </fieldset>
+          }
+
+          @if (expenseError()) {
+            <p class="error">{{ expenseError() }}</p>
+          }
+
+          <div class="form-actions">
+            <button type="submit" [disabled]="isSavingExpense()">
+              {{ isSavingExpense() ? 'Saving…' : editingExpenseId() ? 'Save changes' : 'Add expense' }}
+            </button>
+            @if (editingExpenseId()) {
+              <button type="button" class="secondary" (click)="cancelEditExpense()">Cancel</button>
+            }
+          </div>
+        </form>
+      </section>
+
+      <section class="expenses">
+        <h2>Activity</h2>
+        @if (activity().length === 0) {
+          <p class="muted">No expenses or payments yet.</p>
+        } @else {
+          <ul class="mobile-activity-list">
+            @for (item of activity(); track item.kind + (item.kind === 'expense' ? item.expense.id : item.payment.id)) {
+              @if (item.kind === 'expense') {
+                <li>
+                  <span class="category-tile" [style.background]="getCategoryMeta(item.expense.category).color">{{
+                    getCategoryMeta(item.expense.category).tile
+                  }}</span>
+                  <span class="activity-info">
+                    <span class="activity-title">{{ item.expense.description }}</span>
+                    <span class="activity-sub muted">paid by {{ item.expense.paidByDisplayName }} · {{ item.expense.splitType === 'Exact' ? 'custom split' : 'split equally' }}</span>
+                  </span>
+                  <span class="activity-amount">{{ item.expense.amount | number: '1.2-2' }}</span>
+                  @if (canEditExpense(item.expense)) {
+                    <span class="row-actions">
+                      <button
+                        type="button"
+                        class="link-button"
+                        [disabled]="editingExpenseId() !== null"
+                        (click)="startEditExpense(item.expense)"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        class="link-button danger"
+                        [disabled]="deletingExpenseId() === item.expense.id || editingExpenseId() !== null"
+                        (click)="deleteExpense(item.expense)"
+                      >
+                        {{ deletingExpenseId() === item.expense.id ? 'Deleting…' : 'Delete' }}
+                      </button>
+                    </span>
+                  }
+                </li>
+              } @else {
+                <li>
+                  <span class="dot settled"></span>
+                  <span class="activity-info">
+                    <span class="activity-title">{{ item.payment.fromDisplayName }} paid {{ item.payment.toDisplayName }}</span>
+                    <span class="activity-sub muted">Settled up</span>
+                  </span>
+                  <span class="activity-amount">{{ item.payment.amount | number: '1.2-2' }}</span>
+                </li>
+              }
+            }
+          </ul>
+        }
+      </section>
+
+      <section class="stats">
+        <h2>Spending summary</h2>
+        <p>Group total: <strong>{{ groupTotal() | number: '1.2-2' }}</strong></p>
+        <p>Average per person: <strong>{{ groupAverage() | number: '1.2-2' }}</strong></p>
+        <ul class="mobile-balance-list">
+          @for (m of memberSpending(); track m.tripMemberId) {
+            <li>
+              <span class="mini-avatar" [style.background]="avatarColor(m.tripMemberId)">{{ initials(m.displayName) }}</span>
+              <span class="balance-name">{{ m.displayName }}</span>
+              <span class="balance-amount">{{ m.total | number: '1.2-2' }}</span>
+            </li>
+          }
+        </ul>
+      </section>
+
+      <section class="category-overview">
+        <h2>Spending by category</h2>
+        <label>
+          Showing
+          <select name="scope" [ngModel]="overviewScope()" (ngModelChange)="overviewScope.set($event)">
+            <option value="group">Whole group</option>
+            @for (member of t.members; track member.tripMemberId) {
+              <option [value]="member.tripMemberId">{{ member.displayName }}'s share</option>
+            }
+          </select>
+        </label>
+
+        @if (categoryBreakdown().total <= 0) {
+          <p class="muted">No expenses to break down yet.</p>
+        } @else {
+          <div class="pie-wrap">
+            <svg viewBox="0 0 140 140" class="pie-chart">
+              <circle cx="70" cy="70" r="60" fill="none" stroke="#ebebe8" stroke-width="20" />
+              @for (slice of pieSlices(); track slice.category.value) {
+                <circle
+                  cx="70"
+                  cy="70"
+                  r="60"
+                  fill="none"
+                  stroke-width="20"
+                  [attr.stroke]="slice.category.color"
+                  [attr.stroke-dasharray]="slice.dashArray"
+                  [attr.stroke-dashoffset]="slice.dashOffset"
+                  transform="rotate(-90 70 70)"
+                />
+              }
+            </svg>
+            <div class="pie-center">
+              <span class="pie-total">{{ categoryBreakdown().total | number: '1.2-2' }}</span>
+              <span class="muted">total</span>
+            </div>
+          </div>
+
+          <ul class="pie-legend">
+            @for (slice of pieSlices(); track slice.category.value) {
+              <li>
+                <span class="legend-dot" [style.background]="slice.category.color"></span>
+                <span class="legend-label">{{ slice.category.label }}</span>
+                <span class="legend-amount">{{ slice.amount | number: '1.2-2' }}</span>
+                <span class="legend-percent muted">{{ slice.fraction * 100 | number: '1.0-0' }}%</span>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <section class="balances">
+        <h2>Balances</h2>
+        <p class="muted">Positive means the group owes them; negative means they owe the group.</p>
+        <ul class="mobile-balance-list">
+          @for (balance of balances(); track balance.tripMemberId) {
+            <li>
+              <span class="mini-avatar" [style.background]="avatarColor(balance.tripMemberId)">{{
+                initials(balance.displayName)
+              }}</span>
+              <span class="balance-name">{{ balance.displayName }}</span>
+              <span class="balance-amount" [class.positive]="balance.netBalance > 0" [class.negative]="balance.netBalance < 0">
+                {{ balance.netBalance >= 0 ? '+' : '' }}{{ balance.netBalance | number: '1.2-2' }}
+              </span>
+            </li>
+          }
+        </ul>
+      </section>
+
+      <section class="settlement">
+        <h2>Settlement plan</h2>
+        @if (settlementError()) {
+          <p class="error">{{ settlementError() }}</p>
+        }
+        @if (settlementPlan().length === 0) {
+          <p class="muted">Everyone is settled up.</p>
+        } @else {
+          <ul class="suggested-list">
+            @for (txn of settlementPlan(); track txn.fromTripMemberId + txn.toTripMemberId) {
+              <li>
+                <span class="mini-avatar" [style.background]="avatarColor(txn.fromTripMemberId)">{{
+                  initials(txn.fromDisplayName)
+                }}</span>
+                <span class="arrow">&rarr;</span>
+                <span class="mini-avatar" [style.background]="avatarColor(txn.toTripMemberId)">{{
+                  initials(txn.toDisplayName)
+                }}</span>
+                <span class="txn-text">
+                  {{ txn.fromDisplayName }} owes {{ txn.toDisplayName }}
+                  <strong>{{ txn.amount | number: '1.2-2' }}</strong>
+                </span>
+                <button
+                  type="button"
+                  class="settle-button"
+                  [disabled]="settlingKey() === txn.fromTripMemberId + ':' + txn.toTripMemberId"
+                  (click)="settleUp(txn)"
+                >
+                  {{ settlingKey() === txn.fromTripMemberId + ':' + txn.toTripMemberId ? 'Settling…' : 'Settle up' }}
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    </div>
+  }
+}

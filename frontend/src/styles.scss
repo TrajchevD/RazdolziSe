@@ -1,0 +1,306 @@
+/* Global styles — kept intentionally minimal for this project's scope. */
+
+/* Core color palette as CSS custom properties, so ThemeService (app/core/theme.service.ts)
+ * can flip the whole app between light and dark by toggling one attribute on <html>.
+ * Component stylesheets that reference var(--color-*) automatically follow along —
+ * CSS custom properties inherit normally through Angular's emulated view
+ * encapsulation, since it's just attribute selectors, not real Shadow DOM isolation. */
+:root {
+  --color-bg-page: #f7f7f5;
+  --color-bg-card: #ffffff;
+  --color-border: #e2e2e0;
+  --color-text: #222222;
+  --color-text-muted: #888888;
+  --color-accent-bg: #111111;
+  --color-accent-text: #ffffff;
+  --color-tabs-bg: #ebebe8;
+  --color-input-bg: #ffffff;
+  --color-input-border: #cccccc;
+  --color-chip-positive-bg: #ebfbee;
+  --color-chip-positive-text: #2f9e44;
+  --color-chip-negative-bg: #fff0f0;
+  --color-chip-negative-text: #b00020;
+  --color-chip-neutral-bg: #f1f1ef;
+  --color-chip-neutral-text: #666666;
+}
+
+[data-theme='dark'] {
+  --color-bg-page: #15171a;
+  --color-bg-card: #1f2226;
+  --color-border: #34383e;
+  --color-text: #ececec;
+  --color-text-muted: #9a9ea3;
+  --color-accent-bg: #e8e8e8;
+  --color-accent-text: #111111;
+  --color-tabs-bg: #2a2d32;
+  --color-input-bg: #24272c;
+  --color-input-border: #40444a;
+  --color-chip-positive-bg: #16321f;
+  --color-chip-positive-text: #4cd672;
+  --color-chip-negative-bg: #3a1418;
+  --color-chip-negative-text: #ff6b6b;
+  --color-chip-neutral-bg: #2a2d32;
+  --color-chip-neutral-text: #b8bcc2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  background: var(--color-bg-page);
+  color: var(--color-text);
+}
+
+/* Generic utility classes used across BOTH the desktop `.page` layout and every
+ * mobile screen (`.mobile-page`, `.mobile-trip-page`) — kept unscoped so they work
+ * no matter which wrapper a template happens to use. Previously these lived nested
+ * inside `.page { ... }` only, which meant every "muted" secondary-text span and
+ * every error message on mobile silently rendered as plain unstyled black text. */
+.error {
+  color: #b00020;
+}
+
+.muted {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.positive {
+  color: #1f7a1f;
+}
+
+.negative {
+  color: #b00020;
+}
+
+@keyframes skeletonPulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Generic placeholder block for loading states — set a width/height inline (or via a
+ * more specific class) wherever it's used. Pulses gently instead of a flat "Loading…"
+ * so the page hints at its real layout while data is still in flight. */
+.skeleton {
+  background: var(--color-border);
+  border-radius: 6px;
+  animation: skeletonPulse 1.3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+.password-field {
+  position: relative;
+  display: flex;
+
+  input {
+    flex: 1;
+    width: 100%;
+    padding-right: 3.5rem;
+  }
+
+  .toggle-visibility {
+    position: absolute;
+    right: 0.4rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 0.3rem 0.5rem;
+    min-height: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #1f4e79;
+    cursor: pointer;
+  }
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #1f4e79;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+
+  &.danger {
+    color: #b00020;
+  }
+}
+
+.page {
+  max-width: 720px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+  }
+
+  h2 {
+    margin-top: 0;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem 0;
+
+    li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--color-border);
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+  }
+
+  form {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.9rem;
+  }
+
+  input,
+  select {
+    padding: 0.5rem;
+    border: 1px solid var(--color-input-border);
+    border-radius: 4px;
+    background: var(--color-input-bg);
+    color: var(--color-text);
+  }
+
+  button {
+    padding: 0.5rem 1rem;
+    min-height: 44px;
+    border: none;
+    border-radius: 4px;
+    background: #1f4e79;
+    color: white;
+    cursor: pointer;
+
+    &:hover {
+      background: #163a5c;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    &.secondary {
+      background: var(--color-border);
+      color: var(--color-text);
+
+      &:hover {
+        filter: brightness(0.92);
+      }
+    }
+  }
+
+  .error {
+    color: #b00020;
+  }
+
+  .muted {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    margin-left: 0.5rem;
+  }
+
+  .positive {
+    color: #1f7a1f;
+  }
+
+  .negative {
+    color: #b00020;
+  }
+}
+
+/* Mobile layout: below ~640px, give up the card padding/margins for full-width
+ * screens, stack the header, and make every form control and button a full-width,
+ * easy-to-tap target instead of the cozy desktop row layout. */
+@media (max-width: 640px) {
+  .page {
+    margin: 0;
+    padding: 0.75rem;
+
+    section {
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 6px;
+    }
+
+    header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+
+      h1 {
+        font-size: 1.35rem;
+      }
+    }
+
+    form {
+      flex-direction: column;
+      align-items: stretch;
+
+      label {
+        width: 100%;
+      }
+    }
+
+    input,
+    select {
+      width: 100%;
+      font-size: 1rem;
+      min-height: 44px;
+    }
+
+    button {
+      width: 100%;
+    }
+
+    li {
+      flex-wrap: wrap;
+    }
+  }
+}

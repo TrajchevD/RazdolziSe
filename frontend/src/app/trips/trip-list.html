@@ -1,0 +1,214 @@
+@if (viewport.isMobile()) {
+  <div class="mobile-page">
+    <header class="mobile-header">
+      <h1>Trips</h1>
+      <span class="header-actions">
+        <button
+          type="button"
+          class="theme-toggle"
+          (click)="theme.toggle()"
+          [title]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+        >
+          {{ theme.isDark() ? '☀️' : '🌙' }}
+        </button>
+        <button
+          type="button"
+          class="user-avatar"
+          [style.background]="avatarColor(authService.currentUser()?.userId ?? '')"
+          (click)="logout()"
+          title="Log out"
+        >
+          {{ initials(authService.currentUser()?.displayName ?? '?') }}
+        </button>
+      </span>
+    </header>
+
+    <div class="overall-card" [class.negative]="overallNet() < 0">
+      <span class="label">Overall, you are {{ overallNet() >= 0 ? 'owed' : 'owe' }}</span>
+      <span class="amount">{{ (overallNet() < 0 ? -overallNet() : overallNet()) | number: '1.2-2' }}</span>
+      <div class="breakdown">
+        <span>You're owed <strong class="positive">{{ overallOwed() | number: '1.2-2' }}</strong></span>
+        <span>You owe <strong class="negative">{{ overallOwe() | number: '1.2-2' }}</strong></span>
+      </div>
+    </div>
+
+    <h2 class="section-label">Your trips</h2>
+
+    @if (loadError()) {
+      <p class="error">{{ loadError() }} <button type="button" class="link-button" (click)="loadTrips()">Retry</button></p>
+    }
+
+    @if (isLoading()) {
+      <ul class="trip-cards" aria-hidden="true">
+        @for (i of [1, 2, 3]; track i) {
+          <li class="trip-card">
+            <div class="trip-card-link">
+              <div class="trip-card-top">
+                <span class="skeleton" style="width: 55%; height: 1.1rem;"></span>
+                <span class="skeleton" style="width: 64px; height: 28px; border-radius: 14px;"></span>
+              </div>
+              <span class="skeleton" style="width: 35%; height: 0.85rem; display: block;"></span>
+            </div>
+          </li>
+        }
+      </ul>
+    } @else if (!loadError() && trips().length === 0) {
+      <p class="muted">No trips yet — tap + to create one.</p>
+    } @else if (!loadError()) {
+      <ul class="trip-cards">
+        @for (trip of trips(); track trip.id) {
+          <li class="trip-card">
+            <a [routerLink]="['/trips', trip.id]" class="trip-card-link">
+              <div class="trip-card-top">
+                <span class="trip-name">{{ trip.name }}</span>
+                <span class="avatar-stack">
+                  @for (member of trip.members.slice(0, 4); track member.tripMemberId) {
+                    <span class="mini-avatar" [style.background]="avatarColor(member.tripMemberId)">{{
+                      initials(member.displayName)
+                    }}</span>
+                  }
+                  @if (trip.members.length > 4) {
+                    <span class="mini-avatar avatar-overflow">+{{ trip.members.length - 4 }}</span>
+                  }
+                </span>
+              </div>
+              @if (tripBalances()[trip.id] !== undefined) {
+                <span
+                  class="balance-chip"
+                  [class.negative]="tripBalances()[trip.id] < 0"
+                  [class.settled]="tripBalances()[trip.id] === 0"
+                >
+                  @if (tripBalances()[trip.id] > 0) {
+                    You are owed {{ tripBalances()[trip.id] | number: '1.2-2' }}
+                  } @else if (tripBalances()[trip.id] < 0) {
+                    You owe {{ -tripBalances()[trip.id] | number: '1.2-2' }}
+                  } @else {
+                    Settled up
+                  }
+                </span>
+              }
+            </a>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (showCreateForm()) {
+      <div class="create-trip-panel">
+        <form (ngSubmit)="createTrip()">
+          <input type="text" placeholder="Trip name" name="tripName" [(ngModel)]="newTripName" required />
+          <button type="submit" [disabled]="isCreatingTrip()">{{ isCreatingTrip() ? 'Creating…' : 'Create trip' }}</button>
+        </form>
+        @if (errorMessage()) {
+          <p class="error">{{ errorMessage() }}</p>
+        }
+      </div>
+    }
+
+    <button type="button" class="fab" (click)="toggleCreateForm()">{{ showCreateForm() ? '×' : '+' }}</button>
+  </div>
+} @else {
+  <div class="page desktop-trips-page">
+    <header>
+      <h1>Your trips</h1>
+      <div class="user-bar">
+        <span
+          class="mini-avatar"
+          [style.background]="avatarColor(authService.currentUser()?.userId ?? '')"
+        >{{ initials(authService.currentUser()?.displayName ?? '?') }}</span>
+        <span>{{ authService.currentUser()?.displayName }}</span>
+        <button
+          type="button"
+          class="theme-toggle"
+          (click)="theme.toggle()"
+          [title]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+        >
+          {{ theme.isDark() ? '☀️' : '🌙' }}
+        </button>
+        <button (click)="logout()">Log out</button>
+      </div>
+    </header>
+
+    <div class="overall-card desktop-overall-card" [class.negative]="overallNet() < 0">
+      <span class="label">Overall, you are {{ overallNet() >= 0 ? 'owed' : 'owe' }}</span>
+      <span class="amount">{{ (overallNet() < 0 ? -overallNet() : overallNet()) | number: '1.2-2' }}</span>
+      <div class="breakdown">
+        <span>You're owed <strong class="positive">{{ overallOwed() | number: '1.2-2' }}</strong></span>
+        <span>You owe <strong class="negative">{{ overallOwe() | number: '1.2-2' }}</strong></span>
+      </div>
+    </div>
+
+    <section>
+      <h2>Create a trip</h2>
+      <form (ngSubmit)="createTrip()">
+        <input type="text" placeholder="Trip name" name="tripName" [(ngModel)]="newTripName" required />
+        <button type="submit">Create trip</button>
+      </form>
+      @if (errorMessage()) {
+        <p class="error">{{ errorMessage() }}</p>
+      }
+    </section>
+
+    <section>
+      <h2>Trips</h2>
+      @if (loadError()) {
+        <p class="error">{{ loadError() }} <button type="button" class="link-button" (click)="loadTrips()">Retry</button></p>
+      }
+      @if (isLoading()) {
+        <ul class="trip-cards desktop-trip-grid" aria-hidden="true">
+          @for (i of [1, 2, 3]; track i) {
+            <li class="trip-card">
+              <div class="trip-card-link">
+                <div class="trip-card-top">
+                  <span class="skeleton" style="width: 55%; height: 1.1rem;"></span>
+                  <span class="skeleton" style="width: 64px; height: 28px; border-radius: 14px;"></span>
+                </div>
+                <span class="skeleton" style="width: 35%; height: 0.85rem; display: block;"></span>
+              </div>
+            </li>
+          }
+        </ul>
+      } @else if (!loadError() && trips().length === 0) {
+        <p>No trips yet — create one above.</p>
+      } @else if (!loadError()) {
+        <ul class="trip-cards desktop-trip-grid">
+          @for (trip of trips(); track trip.id) {
+            <li class="trip-card">
+              <a [routerLink]="['/trips', trip.id]" class="trip-card-link">
+                <div class="trip-card-top">
+                  <span class="trip-name">{{ trip.name }}</span>
+                  <span class="avatar-stack">
+                    @for (member of trip.members.slice(0, 4); track member.tripMemberId) {
+                      <span class="mini-avatar" [style.background]="avatarColor(member.tripMemberId)">{{
+                        initials(member.displayName)
+                      }}</span>
+                    }
+                    @if (trip.members.length > 4) {
+                      <span class="mini-avatar avatar-overflow">+{{ trip.members.length - 4 }}</span>
+                    }
+                  </span>
+                </div>
+                @if (tripBalances()[trip.id] !== undefined) {
+                  <span
+                    class="balance-chip"
+                    [class.negative]="tripBalances()[trip.id] < 0"
+                    [class.settled]="tripBalances()[trip.id] === 0"
+                  >
+                    @if (tripBalances()[trip.id] > 0) {
+                      You are owed {{ tripBalances()[trip.id] | number: '1.2-2' }}
+                    } @else if (tripBalances()[trip.id] < 0) {
+                      You owe {{ -tripBalances()[trip.id] | number: '1.2-2' }}
+                    } @else {
+                      Settled up
+                    }
+                  </span>
+                }
+                <span class="muted member-count">{{ trip.members.length }} member(s)</span>
+              </a>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  </div>
+}

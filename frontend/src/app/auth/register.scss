@@ -1,0 +1,62 @@
+.auth-card {
+  max-width: 360px;
+  margin: 4rem auto;
+  padding: 2rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text);
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.9rem;
+  }
+
+  input {
+    padding: 0.5rem;
+    border: 1px solid var(--color-input-border);
+    border-radius: 4px;
+    background: var(--color-input-bg);
+    color: var(--color-text);
+  }
+
+  button {
+    padding: 0.6rem;
+    border: none;
+    border-radius: 4px;
+    background: #1f4e79;
+    color: white;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .error {
+    color: #b00020;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-card {
+    margin: 1.5rem 0.75rem;
+    padding: 1.25rem;
+
+    input,
+    button {
+      min-height: 44px;
+      font-size: 1rem;
+    }
+  }
+}
