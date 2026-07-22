@@ -18,6 +18,11 @@ public class AppDbContext : DbContext
     {
         modelBuilder.Entity<User>(entity =>
         {
+            // MySQL/TiDB can't put a unique index on an unbounded text column
+            // ("BLOB/TEXT column used in key specification without a key length") —
+            // unlike SQL Server's nvarchar(max), which allowed this. 320 is the
+            // maximum valid email length per RFC 5321/5322.
+            entity.Property(u => u.Email).HasMaxLength(320);
             entity.HasIndex(u => u.Email).IsUnique();
         });
 

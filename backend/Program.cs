@@ -99,7 +99,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Auto-create the SQL Server database (and every table) on startup if it doesn't
+// Auto-create the database (and every table) on startup if it doesn't
 // exist yet. This project intentionally skips EF Core migrations for simplicity —
 // fine for an internship-scope build where nobody else's production data depends
 // on the schema yet. Note: EnsureCreated() does NOT update an existing database's
