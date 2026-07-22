@@ -103,5 +103,22 @@ public class AppDbContext : DbContext
                   .HasForeignKey(p => p.ToTripMemberId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
+
+        // Pomelo defaults every Guid column to char(36) with collation
+        // "ascii_general_ci". TiDB's collation framework doesn't support that
+        // specific collation ("Unsupported collation when new collation is
+        // enabled") even though it's a completely standard MySQL collation —
+        // only ascii_bin and a handful of others are allowed. Switching every
+        // Guid/Guid? column (every Id and every foreign key in this schema) to
+        // ascii_bin fixes it and changes nothing behaviorally: .NET always
+        // formats Guids the same consistent lowercase-hex way, so the
+        // case-insensitivity ascii_general_ci would have provided was never
+        // actually used.
+        foreach (var property in modelBuilder.Model.GetEntityTypes()
+                     .SelectMany(e => e.GetProperties())
+                     .Where(p => p.ClrType == typeof(Guid) || p.ClrType == typeof(Guid?)))
+        {
+            property.SetCollation("ascii_bin");
+        }
     }
 }
