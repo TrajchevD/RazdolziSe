@@ -2,7 +2,7 @@
 # Multi-stage build: compile with the full SDK image, run on the much smaller
 # ASP.NET runtime-only image.
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copy the project file first and restore separately so Docker can cache the
@@ -13,7 +13,7 @@ RUN dotnet restore TripSplit.Api.csproj
 COPY . .
 RUN dotnet publish TripSplit.Api.csproj -c Release -o /app/publish --no-restore
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .
 

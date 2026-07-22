@@ -40,10 +40,17 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// ---- Database (SQL Server — connect to LocalDB, SQL Server Express, or any
-// server reachable from ConnectionStrings:DefaultConnection in appsettings.json) ----
+// ---- Database (MySQL-wire-protocol — TiDB Cloud, or any MySQL/MariaDB server
+// reachable from ConnectionStrings:DefaultConnection in appsettings.json) ----
+//
+// Using a fixed ServerVersion instead of ServerVersion.AutoDetect(...): AutoDetect
+// opens a connection and parses the server's version string before the app has
+// even started up, which adds a startup round-trip and has no retry policy if
+// that first connection hiccups. TiDB implements the MySQL 5.7 wire protocol, so
+// 5.7.25 is a safe, widely-used fixed version for Pomelo + TiDB.
+var dbConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseMySql(dbConnectionString, new MySqlServerVersion(new Version(5, 7, 25))));
 
 // ---- Application services (the 3-layer split: Controllers -> Services -> Data) ----
 builder.Services.AddScoped<IAuthService, AuthService>();

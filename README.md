@@ -9,22 +9,21 @@ layering in favor of something a single person can build and understand end to e
 ## What's here
 
 ```
-backend/     ASP.NET Core 9 Web API (C#), SQL Server, JWT auth, 3-layer architecture
+backend/     ASP.NET Core 9 Web API (C#), MySQL-wire-protocol DB (TiDB Cloud in production), JWT auth, 3-layer architecture
 frontend/    Angular 22 app (standalone components, signals)
 ```
 
 ## Backend — first run
 
-**Requirements:** .NET 9 SDK, Visual Studio 2022 (17.12+) or `dotnet` CLI, and a SQL Server instance
-— LocalDB (installed automatically with the "ASP.NET and web development" workload in Visual
-Studio), SQL Server Express, or a full SQL Server you manage in SSMS all work.
+**Requirements:** .NET 9 SDK, Visual Studio 2022 (17.12+) or `dotnet` CLI, and a MySQL-compatible
+database — a local MySQL/MariaDB install, or a TiDB Cloud cluster (what production uses) all work,
+via the Pomelo EF Core provider.
 
 1. Open `backend/TripSplit.Api.csproj` in Visual Studio (or `cd backend` in a terminal).
-2. Check `appsettings.json` → `ConnectionStrings:DefaultConnection`. It defaults to LocalDB
-   (`Server=(localdb)\mssqllocaldb;...`), which needs no setup if you have Visual Studio installed.
-   If you'd rather point at a named instance you manage in SSMS, replace it with something like
-   `Server=localhost\SQLEXPRESS;Database=TripSplitDb;Trusted_Connection=True;TrustServerCertificate=True;`
-   — see the `_comment` key alongside it for the SQL-auth variant.
+2. Check `appsettings.json` → `ConnectionStrings:DefaultConnection`. It defaults to a TiDB Cloud
+   template — replace `YOUR_TIDB_USER` / `YOUR_TIDB_PASSWORD` (and host/port if you're using a
+   different cluster or a local MySQL instance instead) with your real values from the TiDB Cloud
+   console's "Connect" button. See the `_comment` key alongside it for a local-MySQL variant.
 3. Restore + run:
    ```
    dotnet restore
@@ -34,7 +33,7 @@ Studio), SQL Server Express, or a full SQL Server you manage in SSMS all work.
    `Database.EnsureCreated()` instead of real EF Core migrations — a deliberate simplification for
    this scope (see the comment in `Program.cs`). Because of that, if you ever change a model
    (add/rename a column) after the database already exists, `EnsureCreated()` will NOT alter it —
-   you'll need to drop `TripSplitDb` (e.g. in SSMS, or `DROP DATABASE TripSplitDb;`) and let it
+   you'll need to drop `TripSplitDb` (`DROP DATABASE TripSplitDb;` from any MySQL client) and let it
    recreate on the next run, or switch to `dotnet ef migrations add InitialCreate`.
 5. The API listens on `http://localhost:5080` (see `Properties/launchSettings.json`). Swagger UI
    opens automatically at `http://localhost:5080/swagger` — use it to register a user, log in,

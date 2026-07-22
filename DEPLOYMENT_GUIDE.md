@@ -1,8 +1,10 @@
 # Deploying TripSplit for free — step by step
 
-Stack: **Cloudflare Pages** (frontend) + **Render** (backend, Docker) + **Azure SQL Database** (free tier, same SQL Server engine you're already using).
+Stack: **Cloudflare Pages** (frontend) + **Render** (backend, Docker) + **TiDB Cloud** (database, MySQL-compatible — reusing the cluster from your pcpartpicker project).
 
 Already done for you in the project folder: `backend/Dockerfile`, `backend/.dockerignore`, `frontend/src/environments/environment.ts` + `environment.prod.ts`, `angular.json` wired to swap between them on production builds, and a git repo initialized on branch `main` with everything committed.
+
+**Note on this pivot:** the backend was on SQL Server + .NET 10 until this point. TiDB speaks the MySQL protocol, not SQL Server's, so switching required swapping the EF Core database provider to Pomelo's MySQL provider — and Pomelo doesn't have official .NET 10 support yet, so the backend was also retargeted to .NET 9 (in support until Nov 2026) to use Pomelo's stable, official release rather than an unofficial fork. `Program.cs` now calls `UseMySql(...)` instead of `UseSqlServer(...)`, and `appsettings.json`'s connection string is in MySQL format.
 
 ---
 
@@ -24,28 +26,28 @@ You now have the code on GitHub — Render and Cloudflare Pages both deploy by c
 
 ---
 
-## 2. Database — Azure SQL free tier
+## 2. Database — TiDB Cloud
 
-1. Go to [portal.azure.com](https://portal.azure.com) and sign up / log in (a card is required for identity verification only; the free database itself doesn't charge it).
-2. Click **Create a resource** → search **SQL Database** → **Create**.
-3. Fill in the basics:
-   - **Resource group**: click *Create new*, name it `tripsplit-rg`.
-   - **Database name**: `TripSplitDb`.
-   - **Server**: click *Create new* → pick a unique server name (e.g. `tripsplit-yourname-srv`) → region close to you → Authentication method: **Use SQL authentication** → set an admin username and a strong password (write these down, you'll need them).
-   - **Want to use SQL elastic pool?**: No.
-   - **Workload environment**: Development.
-   - **Compute + storage**: click *Configure database* → choose **Serverless** → this is what makes it eligible for the free monthly allowance (100,000 vCore-seconds, 32GB storage). Confirm.
-4. **Networking** tab: set **Connectivity method** to *Public endpoint*, and switch on **Allow Azure services and resources to access this server**. Also add your current client IP (there's a button for that) so you can connect from SSMS later.
-5. Click **Review + create** → **Create**. Takes a couple of minutes to deploy.
-6. Once done, open the SQL **database** resource (not the server) → **Connection strings** (left sidebar) → copy the **ADO.NET** one. It looks like:
+Reusing your existing cluster (`gateway01.eu-central-1.prod.aws.tidbcloud.com`) rather than setting up a new one:
+
+1. Go to [tidbcloud.com](https://tidbcloud.com) and log in.
+2. Open your cluster → click **Connect** (top right of the cluster overview page).
+3. In the Connect panel: **Connect With** → pick *General* (or *MySQL CLI* / *MySQL Connector*, any option that shows a plain host/user/password, not a language-specific snippet). Make sure the branch is `main`/default if it asks.
+4. Note down these four values — you'll need them for Render's environment variables in step 3:
+   - **Host**: `gateway01.eu-central-1.prod.aws.tidbcloud.com`
+   - **Port**: `4000`
+   - **User**: shown in the panel, looks like `xxxxxxxx.root` (TiDB Cloud Serverless prefixes the username per-cluster)
+   - **Password**: click *Generate Password* if you don't remember it (this resets it, so make sure nothing else is relying on the old one).
+5. Create the database TripSplit will use: in the Connect panel there's usually a **Create database** option, or you can leave it — `Database.EnsureCreated()` in the app will create `TripSplitDb` and every table automatically on first successful connection, since MySQL/TiDB lets you connect and issue `CREATE DATABASE` without the database existing first (unlike SQL Server).
+6. Build the connection string with your real values (this exact format goes into Render in step 3):
 
    ```
-   Server=tcp:tripsplit-yourname-srv.database.windows.net,1433;Initial Catalog=TripSplitDb;Persist Security Info=False;User ID=youradmin;Password={your_password};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;
+   Server=gateway01.eu-central-1.prod.aws.tidbcloud.com;Port=4000;Database=TripSplitDb;Uid=YOUR_TIDB_USER;Pwd=YOUR_TIDB_PASSWORD;SslMode=VerifyFull;
    ```
 
-   Replace `{your_password}` with the real password you set. Save this string somewhere — you'll paste it into Render in step 3.
+   Save this somewhere — you'll paste it into Render next. TiDB Cloud requires TLS; if `SslMode=VerifyFull` ever throws a certificate-validation error from Render's environment, fall back to `SslMode=Required` (still encrypted, just skips certificate-chain verification).
 
-You can connect to this exact database from SSMS any time using the server name + admin login, if you want to inspect data directly.
+You can inspect this same database any time with a MySQL client (DBeaver, TablePlus, or TiDB Cloud's own web-based SQL console) using the same host/user/password — SSMS won't connect to it since it's not SQL Server.
 
 ---
 
@@ -63,7 +65,7 @@ You can connect to this exact database from SSMS any time using the server name 
 
    | Key | Value |
    |---|---|
-   | `ConnectionStrings__DefaultConnection` | the Azure ADO.NET string from step 2 |
+   | `ConnectionStrings__DefaultConnection` | the TiDB Cloud connection string from step 2 |
    | `Jwt__Key` | a long random string — e.g. generate one with `openssl rand -base64 48` in any terminal, or mash the keyboard for 40+ characters. Do **not** reuse the placeholder from appsettings.json. |
    | `Jwt__Issuer` | `TripSplit` |
    | `Jwt__Audience` | `TripSplitClient` |
@@ -74,7 +76,7 @@ You can connect to this exact database from SSMS any time using the server name 
    (The double underscore `__` is how ASP.NET Core reads nested config keys like `ConnectionStrings:DefaultConnection` from environment variables.)
 
 6. Click **Create Web Service**. Render will pull the repo, build the Docker image, and deploy — first build takes a few minutes (watch the *Logs* tab).
-7. Once live, note the URL Render gives you, e.g. `https://tripsplit-api.onrender.com`. Test it by visiting `https://tripsplit-api.onrender.com/api/trips` in a browser — you should get a 401 (Unauthorized) JSON response, not an error page. That means it's up and the database connection worked (it also means `EnsureCreated()` just built all your tables in the new Azure database).
+7. Once live, note the URL Render gives you, e.g. `https://tripsplit-api.onrender.com`. Test it by visiting `https://tripsplit-api.onrender.com/api/trips` in a browser — you should get a 401 (Unauthorized) JSON response, not an error page. That means it's up and the database connection worked (it also means `EnsureCreated()` just built all your tables in TiDB). If you instead get a 500 or the page hangs, check the Render *Logs* tab first — a bad connection string or an SSL mode mismatch is the most likely cause.
 
 Free-tier note: this service spins down after 15 minutes with no traffic. The next request after that wakes it back up but takes 30-60 seconds — normal for personal use, just don't expect instant load if you haven't opened the app in a while.
 
@@ -123,6 +125,6 @@ Your backend is currently only allowing `http://localhost:4200`. Update it to yo
 
 ## 6. Test it
 
-Open your `https://tripsplit.pages.dev` URL, register an account, create a trip, add an expense. If something fails, open the browser dev tools (F12) → Network tab and check what the failing request's status/response is — that'll tell you whether it's a CORS mismatch (recheck step 5), a database connection issue (recheck the Azure connection string in Render), or something else.
+Open your `https://tripsplit.pages.dev` URL, register an account, create a trip, add an expense. If something fails, open the browser dev tools (F12) → Network tab and check what the failing request's status/response is — that'll tell you whether it's a CORS mismatch (recheck step 5), a database connection issue (recheck the TiDB connection string in Render), or something else.
 
 From here on, any code changes just need `git push` — Render and Cloudflare Pages both auto-redeploy on push to `main`.
