@@ -1,6 +1,6 @@
 # Deploying TripSplit for free — step by step
 
-Stack: **Cloudflare Pages** (frontend) + **Render** (backend, Docker) + **TiDB Cloud** (database, MySQL-compatible — reusing the cluster from your pcpartpicker project).
+Stack: **Vercel** (frontend) + **Render** (backend, Docker) + **TiDB Cloud** (database, MySQL-compatible — reusing the cluster from your pcpartpicker project).
 
 Already done for you in the project folder: `backend/Dockerfile`, `backend/.dockerignore`, `frontend/src/environments/environment.ts` + `environment.prod.ts`, `angular.json` wired to swap between them on production builds, and a git repo initialized on branch `main` with everything committed.
 
@@ -82,7 +82,7 @@ Free-tier note: this service spins down after 15 minutes with no traffic. The ne
 
 ---
 
-## 4. Frontend — Cloudflare Pages
+## 4. Frontend — Vercel
 
 1. Before deploying, put your real Render URL into the frontend. Open `frontend/src/environments/environment.prod.ts` and replace the placeholder:
 
@@ -100,16 +100,17 @@ Free-tier note: this service spins down after 15 minutes with no traffic. The ne
    git push
    ```
 
-2. Go to [dash.cloudflare.com](https://dash.cloudflare.com), sign up/log in.
-3. Left sidebar → **Workers & Pages** → **Create** → **Pages** tab → **Connect to Git**.
-4. Authorize Cloudflare to access GitHub, pick the `tripsplit` repo.
-5. Build settings:
-   - **Framework preset**: Angular (or None if it's not listed — the settings below work either way).
-   - **Root directory**: `frontend`
-   - **Build command**: `npm run build -- --configuration production`
-   - **Build output directory**: `dist/frontend/browser`
-6. Click **Save and Deploy**. First build takes a couple of minutes.
-7. Once done you get a URL like `https://tripsplit.pages.dev` — that's your live app.
+2. Go to [vercel.com](https://vercel.com), sign up/log in (GitHub login is easiest).
+3. Dashboard → **Add New** → **Project**.
+4. Under "Import Git Repository", find and import your `RazdolziSe` (or `tripsplit`) repo — authorize Vercel's GitHub app if prompted.
+5. On the configure screen:
+   - **Root Directory**: click *Edit* → select `frontend`.
+   - **Framework Preset**: Vercel will likely auto-detect "Angular" — that's fine, but expand **Build and Output Settings** and override manually to be safe:
+     - **Build Command**: override on → `npm run build -- --configuration production`
+     - **Output Directory**: override on → `dist/frontend/browser`
+     - **Install Command**: leave as default (`npm install`).
+6. Click **Deploy**. First build takes a couple of minutes.
+7. Once done you get a URL like `https://razdolzise.vercel.app` — that's your live app.
 
 ---
 
@@ -118,13 +119,13 @@ Free-tier note: this service spins down after 15 minutes with no traffic. The ne
 Your backend is currently only allowing `http://localhost:4200`. Update it to your real frontend URL:
 
 1. Back in Render → your `tripsplit-api` service → **Environment** tab.
-2. Edit `Cors__AllowedOrigin`, set it to your Cloudflare Pages URL exactly, e.g. `https://tripsplit.pages.dev` (no trailing slash).
+2. Edit `Cors__AllowedOrigin`, set it to your Vercel URL exactly, e.g. `https://razdolzise.vercel.app` (no trailing slash).
 3. Save — Render auto-redeploys with the new value.
 
 ---
 
 ## 6. Test it
 
-Open your `https://tripsplit.pages.dev` URL, register an account, create a trip, add an expense. If something fails, open the browser dev tools (F12) → Network tab and check what the failing request's status/response is — that'll tell you whether it's a CORS mismatch (recheck step 5), a database connection issue (recheck the TiDB connection string in Render), or something else.
+Open your `https://razdolzise.vercel.app` URL, register an account, create a trip, add an expense. If something fails, open the browser dev tools (F12) → Network tab and check what the failing request's status/response is — that'll tell you whether it's a CORS mismatch (recheck step 5), a database connection issue (recheck the TiDB connection string in Render), or something else.
 
 From here on, any code changes just need `git push` — Render and Cloudflare Pages both auto-redeploy on push to `main`.
