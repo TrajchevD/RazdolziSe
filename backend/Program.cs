@@ -59,6 +59,19 @@ builder.Services.AddScoped<IExpenseService, ExpenseService>();
 builder.Services.AddScoped<ISettlementService, SettlementService>();
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 
+// ---- Currency conversion (expense currency -> trip settlement currency) and
+// IP-based currency suggestion — both call free external APIs, so each gets its own
+// HttpClient with a short timeout rather than hanging a request if one is slow/down.
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient<IExchangeRateService, ExchangeRateService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+builder.Services.AddHttpClient<IIpCurrencyService, IpCurrencyService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
+
 // ---- JWT authentication ----
 var jwtKey = builder.Configuration["Jwt:Key"]!;
 var jwtIssuer = builder.Configuration["Jwt:Issuer"]!;

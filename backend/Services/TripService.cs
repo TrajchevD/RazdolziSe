@@ -21,12 +21,18 @@ public class TripService : ITripService
             throw new InvalidOperationException("Trip name is required.");
         }
 
+        if (string.IsNullOrWhiteSpace(request.SettlementCurrency) || request.SettlementCurrency.Trim().Length != 3)
+        {
+            throw new InvalidOperationException("Settlement currency must be a 3-letter code (e.g. USD, EUR, MKD).");
+        }
+
         var owner = await _db.Users.FindAsync(ownerUserId)
             ?? throw new UnauthorizedAccessException("Missing user identity.");
 
         var trip = new Trip
         {
             Name = request.Name.Trim(),
+            SettlementCurrency = request.SettlementCurrency.Trim().ToUpperInvariant(),
             OwnerId = ownerUserId,
         };
 
@@ -147,6 +153,7 @@ public class TripService : ITripService
         trip.Name,
         trip.OwnerId,
         trip.CreatedAt,
+        trip.SettlementCurrency,
         trip.Members.Select(m => new TripMemberResponse(m.Id, m.UserId, m.DisplayName)).ToList()
     );
 }

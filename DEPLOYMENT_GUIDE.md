@@ -8,6 +8,21 @@ Already done for you in the project folder: `backend/Dockerfile`, `backend/.dock
 
 ---
 
+## Before your next deploy: drop and recreate the database (currency support)
+
+Adding currency fields (`Trip.SettlementCurrency`, `Expense.Currency`/`OriginalAmount`/`ExchangeRate`) changed the schema. This project uses `Database.EnsureCreated()` instead of real EF Core migrations, and `EnsureCreated()` only ever creates a database/tables that don't exist yet — it never alters an existing table. Since this was agreed to still be test data, the fix is to drop the database so it gets rebuilt fresh with the new columns on the next deploy:
+
+1. Go to your TiDB Cloud cluster's console → open the SQL editor (or connect with any MySQL client using your usual host/user/password).
+2. Run:
+   ```sql
+   DROP DATABASE IF EXISTS TripSplitDb;
+   ```
+3. Push/redeploy the backend as usual (`git push`, Render auto-deploys). On startup, `EnsureCreated()` rebuilds `TripSplitDb` from scratch with the current model — every table, including the new currency columns.
+
+This wipes any trips/expenses currently in there. If you ever want to make this non-destructive going forward, the real fix is switching to EF Core migrations (`dotnet ef migrations add ...`), which needs the .NET SDK to generate — worth doing once you have real data you don't want to lose.
+
+---
+
 ## 1. Push the code to GitHub
 
 1. Go to [github.com](https://github.com), log in, click **New repository** (top right → your avatar → *New repository*, or the green **New** button on the repos page).

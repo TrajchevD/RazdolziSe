@@ -97,6 +97,11 @@
       <div class="create-trip-panel">
         <form (ngSubmit)="createTrip()">
           <input type="text" placeholder="Trip name" name="tripName" [(ngModel)]="newTripName" required />
+          <select name="tripCurrency" [(ngModel)]="newTripCurrency" title="Settlement currency — all balances in this trip will be shown in this currency">
+            @for (currency of currencies; track currency.code) {
+              <option [value]="currency.code">{{ currency.code }} — {{ currency.label }}</option>
+            }
+          </select>
           <button type="submit" [disabled]="isCreatingTrip()">{{ isCreatingTrip() ? 'Creating…' : 'Create trip' }}</button>
         </form>
         @if (errorMessage()) {
@@ -142,7 +147,12 @@
       <h2>Create a trip</h2>
       <form (ngSubmit)="createTrip()">
         <input type="text" placeholder="Trip name" name="tripName" [(ngModel)]="newTripName" required />
-        <button type="submit">Create trip</button>
+        <select name="tripCurrencyDesktop" [(ngModel)]="newTripCurrency" title="Settlement currency — all balances in this trip will be shown in this currency">
+          @for (currency of currencies; track currency.code) {
+            <option [value]="currency.code">{{ currency.code }} — {{ currency.label }}</option>
+          }
+        </select>
+        <button type="submit" [disabled]="isCreatingTrip()">{{ isCreatingTrip() ? 'Creating…' : 'Create trip' }}</button>
       </form>
       @if (errorMessage()) {
         <p class="error">{{ errorMessage() }}</p>

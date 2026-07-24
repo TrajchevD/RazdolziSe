@@ -6,11 +6,13 @@ import { forkJoin, map } from 'rxjs';
 import { TripService } from '../core/trip.service';
 import { SettlementService } from '../core/settlement.service';
 import { ViewportService } from '../core/viewport.service';
+import { CurrencyService } from '../core/currency.service';
 import { TripResponse } from '../core/api.models';
 import { AuthService } from '../core/auth.service';
 import { NotificationService } from '../core/notification.service';
 import { ThemeService } from '../core/theme.service';
 import { avatarColor, initials } from '../shared/avatar-color';
+import { CURRENCIES } from '../shared/currency';
 
 @Component({
   selector: 'app-trip-list',
@@ -22,8 +24,11 @@ export class TripList implements OnInit {
   protected readonly avatarColor = avatarColor;
   protected readonly initials = initials;
 
+  protected readonly currencies = CURRENCIES;
+
   trips = signal<TripResponse[]>([]);
   newTripName = '';
+  newTripCurrency = 'EUR';
   errorMessage = signal<string | null>(null);
   loadError = signal<string | null>(null);
   isLoading = signal(true);
@@ -55,10 +60,17 @@ export class TripList implements OnInit {
     private router: Router,
     private notifications: NotificationService,
     protected theme: ThemeService,
+    private currencyService: CurrencyService,
   ) {}
 
   ngOnInit(): void {
     this.loadTrips();
+    // Best-effort default for the "create trip" currency field — falls back to the
+    // 'EUR' already set above if the lookup fails or is slow, never blocks the page.
+    this.currencyService.suggestCurrency().subscribe({
+      next: (res) => (this.newTripCurrency = res.currency),
+      error: () => {},
+    });
   }
 
   loadTrips(): void {
@@ -117,7 +129,7 @@ export class TripList implements OnInit {
     this.errorMessage.set(null);
     this.isCreatingTrip.set(true);
 
-    this.tripService.createTrip({ name: this.newTripName.trim() }).subscribe({
+    this.tripService.createTrip({ name: this.newTripName.trim(), settlementCurrency: this.newTripCurrency }).subscribe({
       next: (trip) => {
         this.isCreatingTrip.set(false);
         this.newTripName = '';

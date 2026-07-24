@@ -21,6 +21,7 @@ import {
 } from '../core/api.models';
 import { EXPENSE_CATEGORIES, getCategoryMeta } from '../shared/category';
 import { avatarColor, initials } from '../shared/avatar-color';
+import { CURRENCIES, getCurrencyMeta } from '../shared/currency';
 
 /** A single row in the combined activity feed — either an expense or a settle-up
  *  payment, so both show up together sorted by when they happened. */
@@ -46,6 +47,8 @@ export class TripDetail implements OnInit {
   protected readonly initials = initials;
   protected readonly categories = EXPENSE_CATEGORIES;
   protected readonly getCategoryMeta = getCategoryMeta;
+  protected readonly currencies = CURRENCIES;
+  protected readonly getCurrencyMeta = getCurrencyMeta;
 
   tripId = '';
   trip = signal<TripResponse | null>(null);
@@ -208,6 +211,9 @@ export class TripDetail implements OnInit {
 
   expenseDescription = '';
   expenseAmount: number | null = null;
+  // Defaults to the trip's own settlement currency (set once the trip loads — see
+  // loadAll()); the user can still pick a different one per expense.
+  expenseCurrency = 'EUR';
   // Plain "YYYY-MM-DD" string bound to a native <input type="date">. Kept as a date-only
   // string (no time-of-day, no timezone conversion) to avoid an off-by-one-day bug that
   // `new Date(...).toISOString()` would introduce for anyone west of UTC.
@@ -297,6 +303,16 @@ export class TripDetail implements OnInit {
     return share ? share.amountOwed : null;
   }
 
+  /** "3000 MKD" if this expense was entered in a different currency than the trip's
+   *  settlement currency, so the activity/expense lists can show what was actually
+   *  paid alongside the converted total. Null when they match — nothing extra to show. */
+  originalAmountLabel(expense: ExpenseResponse): string | null {
+    if (expense.currency === this.trip()?.settlementCurrency) {
+      return null;
+    }
+    return `${expense.originalAmount.toFixed(2)} ${expense.currency}`;
+  }
+
   private formatDateLabel(isoDate: string): string {
     // isoDate is "YYYY-MM-DD" — parse as local, not UTC-midnight-shifted, to avoid
     // an off-by-one day near midnight in timezones behind UTC.
@@ -320,6 +336,7 @@ export class TripDetail implements OnInit {
           this.expensePaidBy = trip.members[0].tripMemberId;
         }
         this.expenseParticipants = new Set(trip.members.map((m) => m.tripMemberId));
+        this.expenseCurrency = trip.settlementCurrency;
       },
       // The whole page renders nothing until `trip()` is set (see trip-detail.html),
       // so this is the one load failure that needs a real page-level message rather
@@ -436,7 +453,10 @@ export class TripDetail implements OnInit {
     this.editingExpenseId.set(expense.id);
     this.expenseError.set(null);
     this.expenseDescription = expense.description;
-    this.expenseAmount = expense.amount;
+    // Edit what was actually typed (original amount + currency), not the converted
+    // trip-currency figure — re-saving looks up a fresh rate and reconverts.
+    this.expenseAmount = expense.originalAmount;
+    this.expenseCurrency = expense.currency;
     this.expenseDateInput = expense.expenseDate.slice(0, 10);
     this.expensePaidBy = expense.paidByTripMemberId;
     this.splitType = expense.splitType;
@@ -445,7 +465,12 @@ export class TripDetail implements OnInit {
     if (expense.splitType === 'Exact') {
       this.exactAmounts = {};
       for (const share of expense.shares) {
-        this.exactAmounts[share.tripMemberId] = share.amountOwed;
+        // Shares are stored in the trip's settlement currency — convert back to what
+        // was originally typed so the edit form's total lines up with expenseAmount
+        // above. Not byte-identical to the original entry if rounding redistribution
+        // touched this particular share, but close enough to edit from.
+        const original = expense.exchangeRate ? share.amountOwed / expense.exchangeRate : share.amountOwed;
+        this.exactAmounts[share.tripMemberId] = Math.round(original * 100) / 100;
       }
       this.expenseParticipants = new Set(expense.shares.map((s) => s.tripMemberId));
     } else {
@@ -544,6 +569,7 @@ export class TripDetail implements OnInit {
     this.splitType = 'Equal';
     const t = this.trip();
     this.expenseParticipants = new Set(t ? t.members.map((m) => m.tripMemberId) : []);
+    this.expenseCurrency = t?.settlementCurrency ?? 'EUR';
   }
 
   addExpense(): void {
@@ -591,6 +617,7 @@ export class TripDetail implements OnInit {
       paidByTripMemberId: this.expensePaidBy,
       description: this.expenseDescription.trim(),
       amount: this.expenseAmount,
+      currency: this.expenseCurrency,
       expenseDate: this.expenseDateInput,
       splitType: this.splitType,
       shares,

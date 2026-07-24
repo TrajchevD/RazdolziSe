@@ -20,6 +20,7 @@ export interface AuthResponse {
 
 export interface CreateTripRequest {
   name: string;
+  settlementCurrency: string;
 }
 
 export interface AddMemberRequest {
@@ -41,6 +42,7 @@ export interface TripResponse {
   name: string;
   ownerId: string;
   createdAt: string;
+  settlementCurrency: string;
   members: TripMemberResponse[];
 }
 
@@ -57,10 +59,11 @@ export type ExpenseCategory = 'Lodging' | 'Transport' | 'Food' | 'Groceries' | '
 export interface CreateExpenseRequest {
   paidByTripMemberId: string;
   description: string;
-  amount: number;
+  amount: number; // in currency below, not necessarily the trip's settlement currency
+  currency: string;
   expenseDate: string;
   splitType: SplitType;
-  shares: ExpenseShareInput[];
+  shares: ExpenseShareInput[]; // for 'Exact', each amount is also in currency above
   category: ExpenseCategory;
 }
 
@@ -73,7 +76,10 @@ export interface ExpenseShareResponse {
 export interface ExpenseResponse {
   id: string;
   description: string;
-  amount: number;
+  amount: number; // converted, in the trip's settlement currency
+  originalAmount: number; // as entered, in currency below
+  currency: string;
+  exchangeRate: number;
   expenseDate: string;
   paidByTripMemberId: string;
   paidByDisplayName: string;
@@ -111,4 +117,8 @@ export interface PaymentResponse {
   toDisplayName: string;
   amount: number;
   paidAt: string;
+}
+
+export interface CurrencySuggestionResponse {
+  currency: string;
 }

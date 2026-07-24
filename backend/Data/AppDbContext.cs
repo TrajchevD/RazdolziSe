@@ -28,6 +28,8 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Trip>(entity =>
         {
+            entity.Property(t => t.SettlementCurrency).HasMaxLength(3);
+
             entity.HasOne(t => t.Owner)
                   .WithMany(u => u.OwnedTrips)
                   .HasForeignKey(t => t.OwnerId)
@@ -57,6 +59,12 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Expense>(entity =>
         {
             entity.Property(e => e.Amount).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.OriginalAmount).HasColumnType("decimal(18,2)");
+            // Needs more than 2 decimal places — exchange rates like USD->EUR (e.g.
+            // 0.876364) would get rounded down to 0.88 and throw off every converted
+            // amount if this used the same decimal(18,2) as the money columns above.
+            entity.Property(e => e.ExchangeRate).HasColumnType("decimal(18,6)");
+            entity.Property(e => e.Currency).HasMaxLength(3);
 
             entity.HasOne(e => e.Trip)
                   .WithMany(t => t.Expenses)

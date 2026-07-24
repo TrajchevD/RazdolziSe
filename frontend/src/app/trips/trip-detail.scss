@@ -332,6 +332,21 @@ fieldset {
   font-size: 0.7rem;
 }
 
+.expense-original {
+  font-size: 0.7rem;
+}
+
+.currency-badge {
+  font-size: 0.65em;
+  font-weight: 500;
+  vertical-align: middle;
+}
+
+.field-hint {
+  font-size: 0.8rem;
+  margin: -0.5rem 0 0.75rem;
+}
+
 .mobile-balance-list > li {
   display: flex;
   align-items: center;
@@ -645,6 +660,15 @@ fieldset {
     font-size: 1.3rem;
     font-weight: 600;
     color: var(--color-text-muted);
+  }
+
+  .currency-select {
+    flex: 0 0 auto;
+    width: auto;
+    margin-bottom: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0.4rem 0.5rem;
   }
 
   input {

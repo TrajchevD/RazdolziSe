@@ -14,10 +14,12 @@ public class ExpenseService : IExpenseService
     private static readonly string[] ValidCategories = ["Lodging", "Transport", "Food", "Groceries", "Activities", "Other"];
 
     private readonly AppDbContext _db;
+    private readonly IExchangeRateService _exchangeRateService;
 
-    public ExpenseService(AppDbContext db)
+    public ExpenseService(AppDbContext db, IExchangeRateService exchangeRateService)
     {
         _db = db;
+        _exchangeRateService = exchangeRateService;
     }
 
     public async Task<ExpenseResponse> AddExpenseAsync(Guid tripId, Guid requestingUserId, CreateExpenseRequest request)
@@ -30,21 +32,27 @@ public class ExpenseService : IExpenseService
         var requestingMember = trip.Members.SingleOrDefault(m => m.UserId == requestingUserId)
             ?? throw new UnauthorizedAccessException("You are not a member of this trip.");
 
-        var shares = ValidateAndResolveShares(trip, request);
+        var currency = ValidateCurrency(request.Currency);
+        var originalShares = ValidateAndResolveShares(trip, request);
+        var (exchangeRate, convertedAmount, convertedShares) =
+            await ConvertToTripCurrencyAsync(trip, currency, request.Amount, originalShares);
 
         var expense = new Expense
         {
             TripId = tripId,
             PaidByTripMemberId = request.PaidByTripMemberId,
             Description = request.Description.Trim(),
-            Amount = request.Amount,
+            Amount = convertedAmount,
+            OriginalAmount = request.Amount,
+            Currency = currency,
+            ExchangeRate = exchangeRate,
             SplitType = request.SplitType,
             Category = request.Category,
             ExpenseDate = request.ExpenseDate,
             CreatedByTripMemberId = requestingMember.Id,
         };
 
-        foreach (var (memberId, amountOwed) in shares)
+        foreach (var (memberId, amountOwed) in convertedShares)
         {
             expense.Shares.Add(new ExpenseShare
             {
@@ -79,11 +87,17 @@ public class ExpenseService : IExpenseService
             throw new UnauthorizedAccessException("Only the person who added this expense can edit it.");
         }
 
-        var shares = ValidateAndResolveShares(trip, request);
+        var currency = ValidateCurrency(request.Currency);
+        var originalShares = ValidateAndResolveShares(trip, request);
+        var (exchangeRate, convertedAmount, convertedShares) =
+            await ConvertToTripCurrencyAsync(trip, currency, request.Amount, originalShares);
 
         expense.PaidByTripMemberId = request.PaidByTripMemberId;
         expense.Description = request.Description.Trim();
-        expense.Amount = request.Amount;
+        expense.Amount = convertedAmount;
+        expense.OriginalAmount = request.Amount;
+        expense.Currency = currency;
+        expense.ExchangeRate = exchangeRate;
         expense.SplitType = request.SplitType;
         expense.Category = request.Category;
         expense.ExpenseDate = request.ExpenseDate;
@@ -101,7 +115,7 @@ public class ExpenseService : IExpenseService
         // SQL Server reports as "expected 1 row, affected 0" the second time — exactly
         // this exception. Only ever mark a row deleted through ONE path, not two.
         _db.ExpenseShares.RemoveRange(expense.Shares);
-        foreach (var (memberId, amountOwed) in shares)
+        foreach (var (memberId, amountOwed) in convertedShares)
         {
             _db.ExpenseShares.Add(new ExpenseShare
             {
@@ -195,6 +209,61 @@ public class ExpenseService : IExpenseService
         }
 
         return ResolveShares(request.SplitType, request.Amount, request.Shares, participantIds);
+    }
+
+    private static string ValidateCurrency(string? currency)
+    {
+        if (string.IsNullOrWhiteSpace(currency) || currency.Trim().Length != 3)
+        {
+            throw new InvalidOperationException("Currency must be a 3-letter code (e.g. USD, EUR, MKD).");
+        }
+        return currency.Trim().ToUpperInvariant();
+    }
+
+    /// <summary>
+    /// Looks up (and freezes) the exchange rate from the expense's own currency to the
+    /// trip's settlement currency, then converts both the total and every individual
+    /// share into that currency. Converting shares individually and just multiplying
+    /// each by the rate would only sum back to the converted total by coincidence
+    /// (rounding each to the nearest cent independently accumulates drift) — so after
+    /// converting, any leftover cents from that drift get redistributed one at a time,
+    /// the same deterministic way BuildEqualShares already handles split remainders.
+    /// </summary>
+    private async Task<(decimal ExchangeRate, decimal ConvertedAmount, List<(Guid MemberId, decimal AmountOwed)> ConvertedShares)>
+        ConvertToTripCurrencyAsync(Trip trip, string currency, decimal originalAmount, List<(Guid MemberId, decimal AmountOwed)> originalShares)
+    {
+        var rate = await _exchangeRateService.GetRateAsync(currency, trip.SettlementCurrency);
+        var convertedAmount = Math.Round(originalAmount * rate, 2);
+
+        if (rate == 1m)
+        {
+            // Same currency — no conversion, no rounding drift to redistribute.
+            return (rate, convertedAmount, originalShares);
+        }
+
+        var converted = originalShares
+            .OrderBy(s => s.MemberId)
+            .Select(s => (s.MemberId, Amount: Math.Round(s.AmountOwed * rate, 2)))
+            .ToList();
+
+        var remainderCents = (int)Math.Round((convertedAmount - converted.Sum(c => c.Amount)) * 100m);
+
+        var result = new List<(Guid, decimal)>();
+        for (var i = 0; i < converted.Count; i++)
+        {
+            var amount = converted[i].Amount;
+            if (remainderCents > 0 && i < remainderCents)
+            {
+                amount += 0.01m;
+            }
+            else if (remainderCents < 0 && i < -remainderCents)
+            {
+                amount -= 0.01m;
+            }
+            result.Add((converted[i].MemberId, amount));
+        }
+
+        return (rate, convertedAmount, result);
     }
 
     public async Task<List<ExpenseResponse>> GetExpensesAsync(Guid tripId, Guid requestingUserId)
@@ -303,6 +372,9 @@ public class ExpenseService : IExpenseService
             expense.Id,
             expense.Description,
             expense.Amount,
+            expense.OriginalAmount,
+            expense.Currency,
+            expense.ExchangeRate,
             expense.ExpenseDate,
             expense.PaidByTripMemberId,
             expense.PaidBy!.DisplayName,

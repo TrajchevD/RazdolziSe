@@ -24,7 +24,7 @@
     <div class="mobile-trip-page">
       <header class="mobile-trip-header">
         <a routerLink="/trips" class="icon-button">&larr;</a>
-        <h1>{{ t.name }}</h1>
+        <h1>{{ t.name }} <span class="muted currency-badge">{{ t.settlementCurrency }}</span></h1>
         <button type="button" class="icon-button" (click)="openMembers()" title="Members">👥</button>
       </header>
 
@@ -73,6 +73,9 @@
                     </span>
                     <span class="expense-amounts">
                       <span class="expense-total">{{ expense.amount | number: '1.2-2' }}</span>
+                      @if (originalAmountLabel(expense); as original) {
+                        <span class="expense-original muted">{{ original }}</span>
+                      }
                       @if (myShareOf(expense) !== null) {
                         <span class="expense-share muted">your share {{ myShareOf(expense) | number: '1.2-2' }}</span>
                       }
@@ -121,7 +124,12 @@
                       <span class="activity-title">{{ item.expense.description }}</span>
                       <span class="activity-sub muted">{{ paidByLabel(item.expense) }} · split {{ item.expense.shares.length }} ways</span>
                     </span>
-                    <span class="activity-amount">{{ item.expense.amount | number: '1.2-2' }}</span>
+                    <span class="expense-amounts">
+                      <span class="activity-amount">{{ item.expense.amount | number: '1.2-2' }}</span>
+                      @if (originalAmountLabel(item.expense); as original) {
+                        <span class="expense-original muted">{{ original }}</span>
+                      }
+                    </span>
                   </li>
                 } @else {
                   <li>
@@ -216,9 +224,18 @@
 
             <label class="field-label" for="mAmount">Amount</label>
             <div class="amount-input">
-              <span class="currency">$</span>
+              <select class="currency-select" name="mCurrency" [(ngModel)]="expenseCurrency" title="Currency this expense was paid in">
+                @for (currency of currencies; track currency.code) {
+                  <option [value]="currency.code">{{ currency.code }}</option>
+                }
+              </select>
               <input id="mAmount" type="number" step="0.01" min="0" name="mAmount" [(ngModel)]="expenseAmount" required />
             </div>
+            @if (trip(); as t) {
+              @if (expenseCurrency !== t.settlementCurrency) {
+                <p class="field-hint muted">Converted to {{ t.settlementCurrency }} at today's rate when saved.</p>
+              }
+            }
 
             <label class="field-label" for="mDate">Date</label>
             <input id="mDate" type="date" name="mDate" [(ngModel)]="expenseDateInput" required />
@@ -470,7 +487,7 @@
     <div class="page">
       <header>
         <a routerLink="/trips">&larr; All trips</a>
-        <h1>{{ t.name }}</h1>
+        <h1>{{ t.name }} <span class="muted currency-badge">{{ t.settlementCurrency }}</span></h1>
       </header>
 
       <section class="members">
@@ -534,6 +551,20 @@
             Amount
             <input type="number" step="0.01" min="0" name="amount" [(ngModel)]="expenseAmount" required />
           </label>
+
+          <label>
+            Currency
+            <select name="currency" [(ngModel)]="expenseCurrency">
+              @for (currency of currencies; track currency.code) {
+                <option [value]="currency.code">{{ currency.code }} — {{ currency.label }}</option>
+              }
+            </select>
+          </label>
+          @if (trip(); as t) {
+            @if (expenseCurrency !== t.settlementCurrency) {
+              <p class="field-hint muted">Converted to {{ t.settlementCurrency }} at today's rate when saved.</p>
+            }
+          }
 
           <label>
             Date
@@ -638,7 +669,12 @@
                     <span class="activity-title">{{ item.expense.description }}</span>
                     <span class="activity-sub muted">paid by {{ item.expense.paidByDisplayName }} · {{ item.expense.splitType === 'Exact' ? 'custom split' : 'split equally' }}</span>
                   </span>
-                  <span class="activity-amount">{{ item.expense.amount | number: '1.2-2' }}</span>
+                  <span class="expense-amounts">
+                    <span class="activity-amount">{{ item.expense.amount | number: '1.2-2' }}</span>
+                    @if (originalAmountLabel(item.expense); as original) {
+                      <span class="expense-original muted">{{ original }}</span>
+                    }
+                  </span>
                   @if (canEditExpense(item.expense)) {
                     <span class="row-actions">
                       <button
