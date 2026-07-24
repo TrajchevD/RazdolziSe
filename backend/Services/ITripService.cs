@@ -9,4 +9,5 @@ public interface ITripService
     Task<TripResponse> GetTripAsync(Guid tripId, Guid requestingUserId);
     Task<TripResponse> AddMemberAsync(Guid tripId, Guid requestingUserId, AddMemberRequest request);
     Task<TripResponse> AddGuestAsync(Guid tripId, Guid requestingUserId, AddGuestRequest request);
+    Task DeleteTripAsync(Guid tripId, Guid requestingUserId);
 }

@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TripService } from '../core/trip.service';
 import { ExpenseService } from '../core/expense.service';
 import { SettlementService } from '../core/settlement.service';
@@ -94,6 +94,17 @@ export class TripDetail implements OnInit {
     }
     return this.balances().find((b) => b.tripMemberId === id)?.netBalance ?? 0;
   });
+
+  /** Only the trip owner may delete the whole trip — enforced server-side too, this
+   *  just keeps the affordance from showing for members who didn't create it. */
+  isOwner = computed(() => {
+    const t = this.trip();
+    const userId = this.authService.currentUser()?.userId;
+    return !!t && !!userId && t.ownerId === userId;
+  });
+
+  isDeletingTrip = signal(false);
+  deleteTripError = signal<string | null>(null);
 
   /** The expense currently loaded into the add-expense overlay for editing, if any —
    *  looked up as a computed rather than inline in the template, since Angular
@@ -270,6 +281,7 @@ export class TripDetail implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private tripService: TripService,
     private expenseService: ExpenseService,
     private settlementService: SettlementService,
@@ -548,6 +560,36 @@ export class TripDetail implements OnInit {
       error: (err) => {
         this.deletingExpenseId.set(null);
         this.expenseError.set(err.error?.message ?? 'Could not delete expense.');
+      },
+    });
+  }
+
+  async deleteTrip(): Promise<void> {
+    const t = this.trip();
+    if (!t || this.isDeletingTrip()) {
+      return;
+    }
+
+    const confirmed = await this.confirmDialog.confirm(
+      `Delete "${t.name}"? This permanently deletes every expense, payment, and member record for this trip. This can't be undone.`,
+      { confirmLabel: 'Delete trip', danger: true },
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    this.deleteTripError.set(null);
+    this.isDeletingTrip.set(true);
+
+    this.tripService.deleteTrip(t.id).subscribe({
+      next: () => {
+        this.isDeletingTrip.set(false);
+        this.router.navigate(['/trips']);
+      },
+      error: (err) => {
+        this.isDeletingTrip.set(false);
+        this.deleteTripError.set(err.error?.message ?? 'Could not delete trip.');
+        this.notifications.notify(this.deleteTripError()!);
       },
     });
   }

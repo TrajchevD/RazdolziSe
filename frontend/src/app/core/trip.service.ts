@@ -29,4 +29,8 @@ export class TripService {
   addGuest(tripId: string, request: AddGuestRequest): Observable<TripResponse> {
     return this.http.post<TripResponse>(`${this.apiUrl}/${tripId}/guests`, request);
   }
+
+  deleteTrip(tripId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${tripId}`);
+  }
 }

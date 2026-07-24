@@ -480,6 +480,19 @@
             }
             <p class="muted">Guests can be split with and owe/are owed money like anyone else — they just don't log in.</p>
           </div>
+
+          @if (isOwner()) {
+            <div class="add-form-card danger-zone">
+              <h3 class="section-label">Danger zone</h3>
+              <p class="muted">Permanently deletes this trip and every expense, payment, and member record in it.</p>
+              @if (deleteTripError()) {
+                <p class="error">{{ deleteTripError() }}</p>
+              }
+              <button type="button" class="danger-button" [disabled]="isDeletingTrip()" (click)="deleteTrip()">
+                {{ isDeletingTrip() ? 'Deleting…' : 'Delete trip' }}
+              </button>
+            </div>
+          }
         </div>
       </div>
     }
@@ -536,6 +549,19 @@
             }
             <p class="muted">Guests can be split with and owe/are owed money like anyone else — they just don't log in.</p>
           </div>
+
+          @if (isOwner()) {
+            <div class="add-form-card danger-zone">
+              <h3 class="section-label">Danger zone</h3>
+              <p class="muted">Permanently deletes this trip and every expense, payment, and member record in it.</p>
+              @if (deleteTripError()) {
+                <p class="error">{{ deleteTripError() }}</p>
+              }
+              <button type="button" class="danger-button" [disabled]="isDeletingTrip()" (click)="deleteTrip()">
+                {{ isDeletingTrip() ? 'Deleting…' : 'Delete trip' }}
+              </button>
+            </div>
+          }
         </div>
       </section>
 

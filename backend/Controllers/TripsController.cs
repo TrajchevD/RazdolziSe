@@ -52,4 +52,11 @@ public class TripsController : ControllerBase
         var result = await _tripService.AddGuestAsync(tripId, this.GetUserId(), request);
         return Ok(result);
     }
+
+    [HttpDelete("{tripId:guid}")]
+    public async Task<IActionResult> DeleteTrip(Guid tripId)
+    {
+        await _tripService.DeleteTripAsync(tripId, this.GetUserId());
+        return NoContent();
+    }
 }

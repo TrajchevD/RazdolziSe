@@ -140,6 +140,41 @@ public class TripService : ITripService
         return await GetTripAsync(tripId, requestingUserId);
     }
 
+    public async Task DeleteTripAsync(Guid tripId, Guid requestingUserId)
+    {
+        var trip = await _db.Trips
+            .SingleOrDefaultAsync(t => t.Id == tripId)
+            ?? throw new KeyNotFoundException("Trip not found.");
+
+        if (trip.OwnerId != requestingUserId)
+        {
+            throw new UnauthorizedAccessException("Only the trip owner can delete this trip.");
+        }
+
+        // Deleted bottom-up, explicitly, rather than just removing the Trip and letting
+        // the database cascade handle the rest. TripMember is referenced by
+        // Expense.PaidByTripMemberId, ExpenseShare.TripMemberId, and
+        // Payment.From/ToTripMemberId with RESTRICT (not cascade) foreign keys — and
+        // TripMember itself cascades directly from Trip. If the database processed that
+        // TripMember cascade before finishing the Expense/ExpenseShare/Payment cascades
+        // (both triggered by the same single DELETE), the RESTRICT constraints could
+        // reject it with a foreign key violation. Deleting every dependent table in
+        // dependency order first removes that ambiguity entirely — by the time TripMember
+        // rows are deleted, nothing else references them anymore.
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+
+        var expenseIds = await _db.Expenses.Where(e => e.TripId == tripId).Select(e => e.Id).ToListAsync();
+        await _db.ExpenseShares.Where(s => expenseIds.Contains(s.ExpenseId)).ExecuteDeleteAsync();
+        await _db.Expenses.Where(e => e.TripId == tripId).ExecuteDeleteAsync();
+        await _db.Payments.Where(p => p.TripId == tripId).ExecuteDeleteAsync();
+        await _db.TripMembers.Where(m => m.TripId == tripId).ExecuteDeleteAsync();
+
+        _db.Trips.Remove(trip);
+        await _db.SaveChangesAsync();
+
+        await transaction.CommitAsync();
+    }
+
     private static void EnsureMember(Trip trip, Guid userId)
     {
         if (!trip.Members.Any(m => m.UserId == userId))
