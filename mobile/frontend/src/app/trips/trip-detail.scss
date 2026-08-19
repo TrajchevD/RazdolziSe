@@ -1056,46 +1056,6 @@ fieldset {
   font-size: 0.8rem;
 }
 
-.chip {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.65rem 0.35rem 0.35rem;
-  border: 2px solid var(--color-border);
-  border-radius: 999px;
-  background: var(--color-bg-card);
-  color: var(--color-text);
-  font-size: 0.8rem;
-  cursor: pointer;
-  min-height: 40px;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
-
-  &:hover {
-    border-color: var(--color-accent-2);
-  }
-
-  /* Same "more than one signal" rule as .member-card.selected — filled border
-   * AND a tinted background AND bold text, not just a thin border tint against
-   * an otherwise-identical unselected chip. */
-  &.selected {
-    border-color: var(--color-accent-bg);
-    background: color-mix(in srgb, var(--color-accent-bg) 16%, var(--color-bg-card));
-    font-weight: 700;
-  }
-}
-
-.chip-tile {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  color: white;
-  font-size: 0.55rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 /* ---- Member selection grid — "Paid by" (single-select) and "Split" (multi-
  * select) both use this same larger, deliberate card treatment instead of the
  * old small horizontal-scroll avatar row / cramped list row. Sized to fill
