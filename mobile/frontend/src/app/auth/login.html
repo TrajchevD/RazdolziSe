@@ -1,0 +1,70 @@
+<div class="auth-card">
+  <div class="brand">
+    <span class="brand-mark"></span>
+    <span class="brand-name">RazdolziSe</span>
+  </div>
+
+  <h1>Welcome back</h1>
+  <p class="tagline">Log in to keep splitting trips with your people.</p>
+
+  <form (ngSubmit)="submit()">
+    <label>
+      Email
+      <input type="email" name="email" [(ngModel)]="email" required />
+    </label>
+
+    <label>
+      Password
+      <div class="password-field">
+        <input [type]="showPassword() ? 'text' : 'password'" name="password" [(ngModel)]="password" required />
+        <button
+          type="button"
+          class="toggle-visibility"
+          (click)="showPassword.set(!showPassword())"
+          [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+        >
+          {{ showPassword() ? 'Hide' : 'Show' }}
+        </button>
+      </div>
+    </label>
+
+    @if (errorMessage()) {
+      <p class="error">{{ errorMessage() }}</p>
+    }
+
+    <button type="submit" [disabled]="isSubmitting()">
+      {{ isSubmitting() ? 'Logging in…' : 'Log in' }}
+    </button>
+  </form>
+
+  <div class="divider"><span>or</span></div>
+
+  @if (!showGuestForm()) {
+    <button type="button" class="secondary-button guest-toggle" (click)="toggleGuestForm()">
+      Continue as guest
+    </button>
+  } @else {
+    <form class="guest-name-form" (ngSubmit)="continueAsGuest()">
+      <label>
+        Your name
+        <input type="text" name="guestNameInput" placeholder="What should we call you?" [(ngModel)]="guestNameInput" required />
+      </label>
+      @if (guestError()) {
+        <p class="error">{{ guestError() }}</p>
+      }
+      <button type="submit" class="secondary-button" [disabled]="isContinuingAsGuest() || !guestNameInput.trim()">
+        {{ isContinuingAsGuest() ? 'One sec…' : 'Start as guest' }}
+      </button>
+    </form>
+    <p class="field-hint muted guest-hint">
+      No email needed — you can add trips and expenses right away, and save your account with an email/password later
+      from Profile whenever you want your trips to follow you to another device.
+    </p>
+  }
+
+  <!-- queryParamsHandling="preserve" carries returnUrl along (see join-claim.ts's
+       goToLogin()) so switching to Register mid-way doesn't lose the trip
+       they were trying to join. -->
+  <p>No account yet? <a routerLink="/register" queryParamsHandling="preserve">Register</a></p>
+  <p><a routerLink="/forgot-password" queryParamsHandling="preserve">Forgot password?</a></p>
+</div>

@@ -1,0 +1,9 @@
+<router-outlet />
+<app-toast-container />
+<app-confirm-dialog-host />
+@if (showTabBar()) {
+  <app-tab-bar />
+}
+@if (showLockScreen()) {
+  <app-biometric-lock-screen />
+}

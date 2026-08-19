@@ -1,0 +1,29 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "_comment": "TiDB Cloud (MySQL-wire-protocol) connection string. Never commit a real value here — copy this file to appsettings.json (gitignored) and fill it in locally, or set it via an environment variable / user-secrets in real deployments.",
+    "DefaultConnection": "Server=YOUR_HOST;Port=4000;Database=YOUR_DB;Uid=YOUR_USER;Pwd=YOUR_PASSWORD;SslMode=VerifyFull;"
+  },
+  "Email": {
+    "_comment": "Gmail SMTP relay used for verification/reset emails. Leave the placeholders as-is to keep the app in its safe 'log instead of send' mode.",
+    "GmailAddress": "CHANGE_ME@gmail.com",
+    "GmailAppPassword": "CHANGE_THIS_TO_A_GMAIL_APP_PASSWORD",
+    "FromDisplayName": "RazdolziSe"
+  },
+  "Jwt": {
+    "Key": "CHANGE_THIS_TO_A_LONG_RANDOM_SECRET_AT_LEAST_32_CHARACTERS",
+    "Issuer": "RazdolziSe",
+    "Audience": "RazdolziSe",
+    "ExpiryMinutes": 60
+  },
+  "Cors": {
+    "_comment": "Comma-separated list of allowed origins.",
+    "AllowedOrigins": "capacitor://localhost,https://localhost,http://localhost:4200"
+  }
+}

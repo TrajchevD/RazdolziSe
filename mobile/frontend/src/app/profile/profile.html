@@ -1,0 +1,148 @@
+<div class="mobile-page">
+  <header class="mobile-header">
+    <h1>Profile</h1>
+  </header>
+
+  <div class="profile-card">
+    <span
+      class="profile-avatar"
+      [style.background]="avatarColor(authService.currentUser()?.userId ?? '')"
+    >{{ initials(authService.currentUser()?.displayName ?? '?') }}</span>
+    <span class="profile-name">
+      {{ authService.currentUser()?.displayName ?? 'Unknown' }}
+      @if (authService.currentUser()?.tag) {
+        <span class="profile-tag">#{{ authService.currentUser()?.tag }}</span>
+      }
+    </span>
+
+    @if (authService.currentUser()?.tag) {
+      <div class="id-actions">
+        <button type="button" class="link-button" (click)="showIdCard.set(!showIdCard())">
+          {{ showIdCard() ? 'Hide QR code' : 'Show QR code' }}
+        </button>
+        @if (qrScan.isAvailable()) {
+          <button type="button" class="link-button" (click)="scanFriendCode()">
+            Scan a friend's QR
+          </button>
+        }
+      </div>
+    }
+
+    @if (showIdCard()) {
+      <div class="id-card">
+        <img
+          class="id-qr"
+          [src]="identityQrUrl()"
+          alt="QR code for {{ authService.currentUser()?.displayName }}#{{ authService.currentUser()?.tag }}"
+        />
+        <span class="muted">Have a friend open Profile &rarr; "Scan a friend's QR" and point their camera at this to send you a request.</span>
+      </div>
+    }
+  </div>
+
+  @if (authService.currentUser()?.isGuest) {
+    <div class="save-account-card">
+      <h2>Save your account</h2>
+      <p>Add an email and password so a new phone or reinstall doesn't lose your trips.</p>
+
+      <form (ngSubmit)="linkAccount()">
+        <label>
+          Email
+          <input type="email" name="linkEmail" [(ngModel)]="linkEmail" required />
+        </label>
+
+        <label>
+          Password
+          <div class="password-field">
+            <input
+              [type]="showLinkPassword() ? 'text' : 'password'"
+              name="linkPassword"
+              [(ngModel)]="linkPassword"
+              required
+              minlength="8"
+            />
+            <button
+              type="button"
+              class="toggle-visibility"
+              (click)="showLinkPassword.set(!showLinkPassword())"
+              [attr.aria-label]="showLinkPassword() ? 'Hide password' : 'Show password'"
+            >
+              {{ showLinkPassword() ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+        </label>
+
+        @if (linkError()) {
+          <p class="error">{{ linkError() }}</p>
+        }
+
+        <button type="submit" [disabled]="isLinking()">
+          {{ isLinking() ? 'Saving…' : 'Save account' }}
+        </button>
+      </form>
+    </div>
+  }
+
+  @if (!authService.currentUser()?.isGuest && !authService.currentUser()?.isEmailVerified) {
+    <div class="save-account-card">
+      <h2>Verify your email</h2>
+      <p>Confirm you own this inbox so you can always get back into your account.</p>
+
+      @if (!codeSent()) {
+        @if (verifyError()) {
+          <p class="error">{{ verifyError() }}</p>
+        }
+        <button type="button" [disabled]="isSendingCode()" (click)="sendVerificationCode()">
+          {{ isSendingCode() ? 'Sending…' : 'Send verification code' }}
+        </button>
+      } @else {
+        <form (ngSubmit)="verifyEmailCode()">
+          <label>
+            Verification code
+            <input
+              type="text"
+              name="verifyCode"
+              [(ngModel)]="verifyCodeInput"
+              required
+              inputmode="numeric"
+              maxlength="6"
+            />
+          </label>
+
+          @if (verifyError()) {
+            <p class="error">{{ verifyError() }}</p>
+          }
+
+          <button type="submit" [disabled]="isVerifyingCode()">
+            {{ isVerifyingCode() ? 'Verifying…' : 'Verify' }}
+          </button>
+          <button type="button" class="link-button" [disabled]="isSendingCode()" (click)="sendVerificationCode()">
+            Resend code
+          </button>
+        </form>
+      }
+    </div>
+  }
+
+  <div class="settings-list">
+    <button type="button" class="settings-row" (click)="toggleTheme()">
+      <span>Appearance</span>
+      <span class="settings-value">{{ theme.isDark() ? 'Dark' : 'Light' }}</span>
+    </button>
+
+    @if (showBiometricRow()) {
+      <button
+        type="button"
+        class="settings-row"
+        [disabled]="isTogglingBiometric()"
+        (click)="toggleBiometricLock()"
+      >
+        <span>Unlock with {{ biometricLock.biometryLabel() }}</span>
+        <span class="settings-value">{{ biometricLock.enabled() ? 'On' : 'Off' }}</span>
+      </button>
+    }
+  </div>
+
+  <h2 class="section-label">Account</h2>
+  <button type="button" class="secondary logout-button" (click)="logout()">Log out</button>
+</div>

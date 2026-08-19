@@ -1,0 +1,173 @@
+/* Standalone screen (not embedded in trip-detail), so it defines its own copies
+ * of a few visual primitives (mini-avatar/member-pick-list/primary-button)
+ * rather than depending on trip-detail.scss, which Angular's view encapsulation
+ * wouldn't apply here anyway. Same "auth-card" shell treatment as
+ * login.scss/forgot-password.scss for visual consistency with the rest of the
+ * pre-login flow this screen sits alongside. */
+:host {
+  display: flex;
+  align-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-y: auto;
+  padding-top: var(--safe-area-top);
+  padding-bottom: var(--safe-area-bottom);
+}
+
+.join-card {
+  width: 100%;
+  max-width: 420px;
+  margin: 4rem auto;
+  padding: 2.25rem 2rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  color: var(--color-text);
+
+  &::before {
+    content: '';
+    display: block;
+    width: 44px;
+    height: 44px;
+    margin-bottom: 1.25rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-accent-2), var(--color-accent));
+  }
+
+  h1 {
+    margin: 0 0 0.35rem;
+    font-size: 1.6rem;
+  }
+
+  > p:first-of-type {
+    margin: 0 0 1.25rem;
+  }
+}
+
+.mini-avatar {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.balance-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.member-pick-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 15rem;
+  overflow-y: auto;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 0.5rem 0.65rem;
+  }
+}
+
+.self-add {
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  input {
+    font-size: 1rem;
+  }
+}
+
+.guest-name-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+
+  input {
+    font-size: 1rem;
+  }
+}
+
+.welcome-name {
+  margin: 0 0 1.25rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.primary-button {
+  padding: 0.55rem 0.9rem;
+  border-radius: 10px;
+  border: none;
+  background: var(--color-accent);
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}
+
+button[type='submit'] {
+  width: 100%;
+}
+
+.error {
+  margin: 0.5rem 0;
+}
+
+.join-card > p:last-child {
+  margin: 1.5rem 0 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  text-align: center;
+
+  a {
+    color: var(--color-accent-600);
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .join-card {
+    margin: 1.5rem 0.75rem;
+    padding: 1.75rem 1.5rem;
+
+    input,
+    button {
+      min-height: 44px;
+      font-size: 1rem;
+    }
+  }
+}

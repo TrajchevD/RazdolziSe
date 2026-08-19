@@ -1,0 +1,104 @@
+<div class="mobile-page">
+  <header class="mobile-header">
+    <h1>Analytics</h1>
+  </header>
+
+  @if (loadError()) {
+    <p class="error">{{ loadError() }} <button type="button" class="link-button" (click)="loadTrips()">Retry</button></p>
+  }
+
+  @if (isLoadingTrips()) {
+    <div class="skeleton" style="height: 44px; border-radius: 12px; margin-bottom: 1rem;" aria-hidden="true"></div>
+    <div class="skeleton" style="height: 180px; border-radius: 16px; margin-bottom: 1rem;" aria-hidden="true"></div>
+    <div class="skeleton" style="height: 140px; border-radius: 16px;" aria-hidden="true"></div>
+  } @else if (trips().length === 0) {
+    <div class="placeholder-page">
+      <div class="placeholder-card">
+        <div class="placeholder-mark"></div>
+        <h2>No trips yet</h2>
+        <p>Create or join a trip first — analytics show up here once there's spending to break down.</p>
+        <a routerLink="/trips" class="link-button">Go to Trips</a>
+      </div>
+    </div>
+  } @else {
+    <label class="field-label" for="tripPicker">Trip</label>
+    <select id="tripPicker" name="tripPicker" [ngModel]="selectedTripId()" (ngModelChange)="onTripChange($event)">
+      @for (trip of trips(); track trip.id) {
+        <option [value]="trip.id">{{ trip.name }}</option>
+      }
+    </select>
+
+    <div class="range-seg">
+      <button type="button" [class.active]="range() === 'week'" (click)="range.set('week')">Week</button>
+      <button type="button" [class.active]="range() === 'trip'" (click)="range.set('trip')">Trip</button>
+      <button type="button" [class.active]="range() === 'year'" (click)="range.set('year')">Year</button>
+    </div>
+
+    @if (expensesError()) {
+      <p class="error">{{ expensesError() }}</p>
+    }
+
+    @if (isLoadingExpenses()) {
+      <div class="skeleton" style="height: 180px; border-radius: 16px; margin-bottom: 1rem;" aria-hidden="true"></div>
+      <div class="skeleton" style="height: 140px; border-radius: 16px;" aria-hidden="true"></div>
+    } @else {
+      <!-- "as" is only legal on a primary @if, not @else if — see the matching
+           comment in trip-detail.html for the same pattern. -->
+      @if (selectedTrip(); as trip) {
+      @if (rangeFilteredExpenses().length === 0) {
+        <p class="muted empty-note">No expenses in this range yet.</p>
+      } @else {
+        <div class="analytics-card">
+          <div class="card-label muted">Total spent · {{ trip.name }}</div>
+          <div class="total-amount">{{ totalSpent() | number: '1.2-2' }} <span class="muted currency-tag">{{ trip.settlementCurrency }}</span></div>
+          <div class="bars-row">
+            @for (bar of dailyBars(); track $index) {
+              <div class="bar-col">
+                <div class="bar" [style.height.%]="bar.heightPct"></div>
+                <div class="bar-label muted">{{ bar.label }}</div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      @if (categoryBreakdown().total > 0) {
+        <div class="analytics-card">
+          <h3 class="section-label">Spending by category</h3>
+          <div class="category-bar">
+            @for (entry of categoryBreakdown().entries; track entry.category.value) {
+              <div [style.width.%]="entry.pct" [style.background]="entry.category.color"></div>
+            }
+          </div>
+          <ul class="category-list">
+            @for (entry of categoryBreakdown().entries; track entry.category.value) {
+              <li>
+                <span class="legend-dot" [style.background]="entry.category.color"></span>
+                <span class="legend-label">{{ entry.category.label }}</span>
+                <span class="legend-percent muted">{{ entry.pct | number: '1.0-0' }}%</span>
+                <span class="legend-amount">{{ entry.amount | number: '1.2-2' }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      @if (spenderRanking().length > 0) {
+        <div class="analytics-card">
+          <h3 class="section-label">Who spent the most</h3>
+          <ul class="spender-list">
+            @for (row of spenderRanking(); track row.tripMemberId) {
+              <li>
+                <span class="mini-avatar" [style.background]="avatarColor(row.tripMemberId)">{{ initials(row.displayName) }}</span>
+                <span class="spender-name">{{ row.displayName }}</span>
+                <span class="spender-progress"><span [style.width.%]="row.pct"></span></span>
+                <span class="spender-amount">{{ row.amount | number: '1.2-2' }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+      }
+    }
+  }
+</div>

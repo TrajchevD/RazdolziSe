@@ -1,0 +1,10 @@
+<div (touchstart)="onTouchStart($event)" (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd()">
+  <div class="ptr-indicator" [style.height.px]="indicatorHeight()">
+    @if (refreshing()) {
+      <span class="ptr-spinner"></span>
+    } @else {
+      <span class="ptr-arrow" [class.armed]="armed()">↓</span>
+    }
+  </div>
+  <ng-content />
+</div>

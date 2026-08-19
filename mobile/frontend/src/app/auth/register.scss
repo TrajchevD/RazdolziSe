@@ -1,0 +1,121 @@
+/* Retheme: matches the imported "Tally" design's auth-card treatment (Organic
+ * design system) — see mobile/PRODUCTION_REVIEW.md. Structure/logic untouched,
+ * only visuals. Kept in sync with login.scss deliberately (same card). */
+:host {
+  display: flex;
+  align-items: center;
+  /* Same reasoning as login.scss — kept in sync deliberately, including the
+   * justify-content fix (was missing here too, letting the card go flush-left
+   * on viewports between ~380-640px wide once the media query below swapped
+   * its auto margin for a fixed one). */
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-y: auto;
+  padding: calc(2rem + var(--safe-area-top)) 1rem calc(2rem + var(--safe-area-bottom));
+}
+
+/* Logo lockup — see login.scss's identical block (kept in sync deliberately,
+ * same card). Replaces the earlier bare decorative circle. */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1.75rem;
+}
+
+.brand-mark {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--color-accent-2), var(--color-accent));
+  box-shadow: var(--shadow-sm);
+}
+
+.brand-name {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  color: var(--color-text);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  // No margin — see login.scss's identical note, kept in sync deliberately.
+  padding: 2.25rem 2rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  color: var(--color-text);
+
+  h1 {
+    margin: 0 0 0.4rem;
+    font-size: 1.7rem;
+  }
+
+  .tagline {
+    margin: 0 0 1.75rem;
+    color: var(--color-text-muted);
+    font-size: 0.92rem;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    font-weight: 600;
+  }
+
+  input {
+    font-size: 1rem;
+  }
+
+  button[type='submit'] {
+    margin-top: 0.25rem;
+    width: 100%;
+  }
+
+  .error {
+    margin: 0;
+    font-size: 0.88rem;
+  }
+
+  p {
+    margin: 1.5rem 0 0;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    text-align: center;
+
+    a {
+      color: var(--color-accent-600);
+      font-weight: 600;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-card {
+    padding: 1.75rem 1.5rem;
+
+    input,
+    button {
+      min-height: 44px;
+      font-size: 1rem;
+    }
+  }
+}

@@ -1,0 +1,309 @@
+/* .mobile-page/.mobile-header/.error/.muted/.skeleton/.link-button come from the
+ * global styles.scss. Everything below duplicates a handful of rules that already
+ * exist in trip-list.scss/notifications.scss (header actions, avatar, balance
+ * chip, activity row) — Angular's per-component style encapsulation means a class
+ * defined in *their* files wouldn't reach this template even with an identical
+ * name, so small presentational bits are re-declared here rather than shared. */
+
+.home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.greeting-block {
+  min-width: 0;
+}
+
+.greeting {
+  font-family: var(--font-heading);
+  font-size: 1.3rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.bell-button {
+  position: relative;
+  min-height: 40px;
+  min-width: 40px;
+  font-size: 1.15rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: var(--color-text);
+}
+
+.bell-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-bg-page);
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  min-height: 0;
+  border-radius: 50%;
+  border: none;
+  color: white;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+}
+
+/* Aggregate hero balance card — same dark treatment as trip-list.scss's
+ * .overall-card (that one stays put there too, since desktop's trip-list still
+ * renders its own copy). Duplicated rather than shared for the same style-
+ * encapsulation reason noted at the top of this file. */
+.hero-card {
+  background: var(--color-accent-bg);
+  color: var(--color-accent-text);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-md);
+
+  .label {
+    display: block;
+    font-size: 0.85rem;
+    opacity: 0.7;
+    margin-bottom: 0.25rem;
+  }
+
+  .amount {
+    display: block;
+    font-family: var(--font-heading);
+    font-size: clamp(1.8rem, 9vw, 2.5rem);
+    line-height: 1.1;
+    color: var(--color-accent-2);
+    overflow-wrap: break-word;
+  }
+
+  &.negative .amount {
+    color: var(--color-accent);
+  }
+
+  .breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    font-size: 0.8rem;
+
+    span {
+      padding: 0.3rem 0.7rem;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .positive {
+      color: var(--color-accent-2);
+    }
+
+    .negative {
+      color: var(--color-accent);
+    }
+  }
+}
+
+.skeleton-hero {
+  display: flex;
+  flex-direction: column;
+}
+
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 1.5rem 0 0.5rem;
+
+  .section-label {
+    margin: 0;
+  }
+}
+
+.section-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+/* Lighter single-card preview of "your latest trip" — deliberately not reusing
+ * trip-list's full .trip-card gradient-banner treatment (that stays a Trips-list
+ * thing); this is a plainer card with the same balance-chip language plus two
+ * direct-action buttons. */
+.latest-trip-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.latest-trip-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: inherit;
+  margin-bottom: 0.75rem;
+}
+
+.trip-name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.avatar-stack {
+  display: flex;
+  flex-shrink: 0;
+
+  .mini-avatar {
+    margin-left: -0.5rem;
+    border: 2px solid var(--color-bg-card);
+
+    &:first-child {
+      margin-left: 0;
+    }
+  }
+}
+
+.mini-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-overflow {
+  background: var(--color-text-muted) !important;
+  font-size: 0.6rem;
+}
+
+.balance-chip {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-chip-positive-text);
+  background: var(--color-chip-positive-bg);
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-pill);
+  text-decoration: none;
+  margin-bottom: 0.85rem;
+
+  &.negative {
+    color: var(--color-chip-negative-text);
+    background: var(--color-chip-negative-bg);
+  }
+
+  &.settled {
+    color: var(--color-chip-neutral-text);
+    background: var(--color-chip-neutral-bg);
+  }
+}
+
+.latest-trip-actions {
+  display: flex;
+  gap: 0.6rem;
+
+  button {
+    flex: 1;
+    min-height: 44px;
+  }
+}
+
+.empty-trip-card {
+  background: var(--color-bg-card);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
+
+  p {
+    margin: 0 0 0.5rem;
+  }
+}
+
+.empty-note {
+  margin: 0.5rem 0 0;
+}
+
+.activity-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.activity-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 0.9rem 1rem;
+  box-shadow: var(--shadow-sm);
+
+  &.unread {
+    border-left: 3px solid var(--color-accent);
+  }
+}
+
+.activity-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.activity-message {
+  font-weight: 500;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}

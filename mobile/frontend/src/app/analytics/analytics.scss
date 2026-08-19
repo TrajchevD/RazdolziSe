@@ -1,0 +1,215 @@
+/* .mobile-page/.mobile-header/.error/.muted/.skeleton/.link-button/.placeholder-*
+ * all come from the global styles.scss. Everything below is Analytics-specific —
+ * see friends.scss's own top-of-file note for why small presentational bits like
+ * these stay local rather than shared, given Angular's per-component style
+ * encapsulation. */
+
+.field-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.15rem;
+}
+
+#tripPicker {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.range-seg {
+  display: flex;
+  background: var(--color-tabs-bg);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem;
+  margin-bottom: 1.25rem;
+
+  button {
+    flex: 1;
+    min-height: 38px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    cursor: pointer;
+
+    &.active {
+      background: var(--color-bg-card);
+      color: var(--color-text);
+      box-shadow: var(--shadow-sm);
+      font-weight: 600;
+    }
+  }
+}
+
+.analytics-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-label {
+  font-size: 0.75rem;
+  margin-bottom: 0.15rem;
+}
+
+.total-amount {
+  font-family: var(--font-heading);
+  font-size: 1.7rem;
+  margin-bottom: 1rem;
+}
+
+.currency-tag {
+  font-size: 0.7em;
+  font-weight: 500;
+}
+
+.bars-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  height: 90px;
+}
+
+.bar-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  height: 100%;
+}
+
+.bar {
+  width: 100%;
+  max-width: 22px;
+  border-radius: 6px 6px 2px 2px;
+  background: var(--color-accent);
+  min-height: 2px;
+}
+
+.bar-label {
+  font-size: 0.65rem;
+}
+
+.section-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin: 0 0 0.85rem;
+}
+
+.category-bar {
+  display: flex;
+  height: 12px;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  margin-bottom: 0.9rem;
+  background: var(--color-tabs-bg);
+}
+
+.category-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.35rem 0;
+    font-size: 0.85rem;
+  }
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  min-width: 10px;
+  border-radius: 3px;
+}
+
+.legend-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.legend-percent {
+  font-size: 0.78rem;
+}
+
+.legend-amount {
+  font-weight: 600;
+  min-width: 56px;
+  text-align: right;
+}
+
+.spender-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 0;
+  }
+}
+
+.mini-avatar {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: 50%;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spender-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spender-progress {
+  width: 80px;
+  min-width: 80px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-tabs-bg);
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    background: var(--color-accent);
+  }
+}
+
+.spender-amount {
+  font-weight: 600;
+  font-size: 0.85rem;
+  min-width: 52px;
+  text-align: right;
+}
+
+.empty-note {
+  margin: 0.5rem 0 1rem;
+}

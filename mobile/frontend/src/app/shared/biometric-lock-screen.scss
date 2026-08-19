@@ -1,0 +1,57 @@
+.lock-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  padding-top: calc(1.5rem + var(--safe-area-top));
+  padding-bottom: calc(1.5rem + var(--safe-area-bottom));
+  background: var(--color-bg-page);
+}
+
+.lock-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 320px;
+  text-align: center;
+}
+
+.lock-icon {
+  font-size: 2.75rem;
+  margin-bottom: 0.5rem;
+}
+
+h1 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  color: var(--color-text);
+}
+
+p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.lock-hint {
+  color: var(--color-chip-negative-text);
+  font-size: 0.88rem;
+}
+
+.unlock-button {
+  margin-top: 1.5rem;
+  width: 100%;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-bg);
+  color: var(--color-accent-text);
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0.9rem 1.5rem;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}

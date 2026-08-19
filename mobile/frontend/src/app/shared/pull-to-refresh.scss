@@ -1,0 +1,50 @@
+/* Custom elements default to display:inline, which would otherwise let this
+ * component's block-level content (header, cards, form, FAB) render inside an
+ * inline box — usually harmless in modern browsers' anonymous-block handling,
+ * but not worth relying on given everything nested inside assumes normal block
+ * flow (and .mobile-page's `position: relative` / the FAB's `position: fixed`
+ * expect an ordinary block ancestor chain). */
+:host {
+  display: block;
+}
+
+.ptr-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 0;
+  overflow: hidden;
+  transition: height 0.15s ease;
+  color: var(--color-accent);
+}
+
+.ptr-arrow {
+  font-size: 1.2rem;
+  line-height: 1;
+  transition: transform 0.2s ease;
+
+  &.armed {
+    transform: rotate(180deg);
+  }
+}
+
+.ptr-spinner {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2.5px solid var(--color-accent-100);
+  border-top-color: var(--color-accent);
+  animation: ptrSpin 0.7s linear infinite;
+}
+
+@keyframes ptrSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ptr-spinner {
+    animation-duration: 1.6s;
+  }
+}

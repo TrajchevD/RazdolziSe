@@ -1,0 +1,13 @@
+<div class="lock-screen">
+  <div class="lock-card">
+    <div class="lock-icon">🔒</div>
+    <h1>RazdolziSe is locked</h1>
+    <p>Use {{ biometricLock.biometryLabel() }} to continue.</p>
+
+    @if (failed()) {
+      <p class="lock-hint">Couldn't verify it's you.</p>
+    }
+
+    <button type="button" class="unlock-button" (click)="retry()">Unlock</button>
+  </div>
+</div>

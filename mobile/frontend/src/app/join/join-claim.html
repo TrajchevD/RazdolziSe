@@ -1,0 +1,94 @@
+<div class="join-card">
+  @if (isLoadingPreview()) {
+    <p class="muted">Loading invite…</p>
+  } @else if (errorMessage() && !preview()) {
+    <h1>Can't open this invite</h1>
+    <p class="error">{{ errorMessage() }}</p>
+    <p><a routerLink="/trips">Back to your trips</a></p>
+  } @else {
+    <!-- "as" is only legal on a primary @if, not @else if — see the matching
+         comment in trip-detail.html for the same pattern. -->
+    @if (preview(); as p) {
+    <h1>{{ p.tripName }}</h1>
+
+    @if (errorMessage()) {
+      <p class="error">{{ errorMessage() }}</p>
+    }
+
+    @if (!isAuthenticated()) {
+      <!-- Not signed in yet on this browser/device — offer all three ways in
+           before showing the "who are you on this trip" step below, which
+           needs a resolved identity to claim anything against. Guest now asks
+           for a real name up front (instead of a one-tap "Guest A1B2") so the
+           welcome step right after this can greet them by it. -->
+      <p class="muted">How do you want to join?</p>
+
+      <form class="guest-name-form" (ngSubmit)="continueAsGuest()">
+        <input type="text" placeholder="Your name" name="guestNameInput" [(ngModel)]="guestNameInput" required />
+        <button
+          type="submit"
+          class="primary-button guest-button"
+          [disabled]="isContinuingAsGuest() || !guestNameInput.trim()"
+        >{{ isContinuingAsGuest() ? 'One sec…' : 'Continue as Guest' }}</button>
+      </form>
+
+      @if (guestError()) {
+        <p class="error">{{ guestError() }}</p>
+      }
+
+      <p class="auth-alt">
+        Have an account? <a (click)="goToLogin()">Log in</a> or <a (click)="goToRegister()">Register</a>
+      </p>
+    } @else {
+      <!-- Already know who they are (account name, or the name just typed into
+           "Continue as Guest") — greet them by it and make joining a single
+           tap instead of asking them to type or pick anything. -->
+      <p class="welcome-name">Welcome, {{ myDisplayName() }}!</p>
+
+      @if (errorMessage()) {
+        <p class="error">{{ errorMessage() }}</p>
+      }
+
+      <button
+        type="button"
+        class="primary-button"
+        [disabled]="isClaiming()"
+        (click)="joinAsSelf()"
+      >{{ isClaiming() && !claimingMemberId() && !showSelfAddForm() ? '…' : 'Join as ' + myDisplayName() }}</button>
+
+      @if (p.unclaimedMembers.length > 0) {
+        <p class="muted">Or are you one of these?</p>
+        <ul class="member-pick-list">
+          @for (member of p.unclaimedMembers; track member.tripMemberId) {
+            <li>
+              <span class="mini-avatar" [style.background]="avatarColor(member.tripMemberId)">{{ initials(member.displayName) }}</span>
+              <span class="balance-name">{{ member.displayName }}</span>
+              <button
+                type="button"
+                class="primary-button"
+                [disabled]="isClaiming()"
+                (click)="claimSlot(member.tripMemberId)"
+              >{{ claimingMemberId() === member.tripMemberId ? '…' : "That's me" }}</button>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (!showSelfAddForm()) {
+        <p class="auth-alt"><a (click)="toggleSelfAddForm()">Use a different name for this trip</a></p>
+      } @else {
+        <div class="self-add">
+          <form (ngSubmit)="claimAsNewMember()">
+            <input type="text" placeholder="Your name" name="newDisplayName" [(ngModel)]="newDisplayName" required />
+            <button type="submit" class="primary-button" [disabled]="isClaiming() || !newDisplayName.trim()">
+              {{ isClaiming() && !claimingMemberId() ? '…' : 'Join with this name' }}
+            </button>
+          </form>
+        </div>
+      }
+    }
+
+    <p><a routerLink="/trips">Back to your trips</a></p>
+    }
+  }
+</div>

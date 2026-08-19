@@ -1,0 +1,595 @@
+/* Global styles.
+ *
+ * Retheme (see mobile/PRODUCTION_REVIEW.md): matches the "Tally" design imported
+ * from claude.ai/design (Trip Expense App.dc.html), built on the **Organic**
+ * design system — warm cream ground, terracotta + sage accents, Caprasimo display
+ * type over Figtree body text, heavily rounded/pill shapes. Token names below
+ * (--color-bg-page, --color-accent-bg, etc.) are kept from the original palette
+ * so every component that already references them just picks up the new values —
+ * only the values changed, not the variable names or what uses them.
+ *
+ * 2026-08: recalibrated against the actual Organic design-system source (the
+ * project's real `_ds/organic-.../styles.css` handoff bundle, not just screenshots
+ * of the rendered prototype like the first pass had to work from) — exact
+ * neutral/accent/accent-2 tonal ramps, radii and shadow values now match the
+ * source 1:1. The full 100–900 ramp for each color role is exposed below as its
+ * own set of tokens (only a couple of steps existed before), since trip-detail's
+ * category chips/avatars/tags need more steps than the semantic tokens alone
+ * provide. */
+
+/* Core color palette as CSS custom properties, so ThemeService (app/core/theme.service.ts)
+ * can flip the whole app between light and dark by toggling one attribute on <html>.
+ * Component stylesheets that reference var(--color-*) automatically follow along —
+ * CSS custom properties inherit normally through Angular's emulated view
+ * encapsulation, since it's just attribute selectors, not real Shadow DOM isolation. */
+:root {
+  --font-heading: 'Caprasimo', 'Georgia', serif;
+  --font-body:
+    'Figtree',
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 28px;
+  --radius-pill: 999px;
+
+  /* Full tonal ramps, straight from the Organic design-system source — absolute
+   * swatches, not theme-dependent, so they're defined once here and reused by
+   * both the light values below and the [data-theme='dark'] overrides further
+   * down (which pick different *steps* of the same ramp for contrast). */
+  --color-neutral-100: #f9f4ed;
+  --color-neutral-200: #eee7db;
+  --color-neutral-300: #dcd3c4;
+  --color-neutral-400: #c0b6a5;
+  --color-neutral-500: #a19786;
+  --color-neutral-600: #82796a;
+  --color-neutral-700: #645c50;
+  --color-neutral-800: #474238;
+  --color-neutral-900: #2e2b25;
+
+  --color-accent-100: #fff2eb;
+  --color-accent-200: #ffe1d0;
+  --color-accent-300: #ffc6a5;
+  --color-accent-400: #f6a06b;
+  --color-accent-500: #d67f48;
+  --color-accent-600: #b2622d;
+  --color-accent-700: #8c491a;
+  --color-accent-800: #643312;
+  --color-accent-900: #402310;
+
+  --color-accent-2-100: #f0fae1;
+  --color-accent-2-200: #e1eecc;
+  --color-accent-2-300: #ccdbb2;
+  --color-accent-2-400: #aebf92;
+  --color-accent-2-500: #8fa073;
+  --color-accent-2-600: #728157;
+  --color-accent-2-700: #56633f;
+  --color-accent-2-800: #3d472b;
+  --color-accent-2-900: #272e1b;
+
+  --color-bg-page: #f5ead8;
+  --color-bg-card: #ebddc5;
+  --color-border: var(--color-neutral-300);
+  --color-text: #201e1d;
+  --color-text-muted: var(--color-neutral-600);
+
+  /* "Accent-bg"/"accent-text" originally meant "the dark hero-card fill" (trip
+   * list's balance card, primary buttons) — kept as the Tally dark hero-card
+   * color rather than renamed, so every existing usage stays correct. Now tied
+   * to the neutral-900/100 ramp steps instead of one-off hex, so it moves in
+   * step with the rest of the palette. */
+  --color-accent-bg: var(--color-neutral-900);
+  --color-accent-text: var(--color-neutral-100);
+
+  --color-accent: #c67139;
+  --color-accent-2: #7a8a5e;
+  /* --color-accent-600/-100 and --color-accent-2-600/-100 (hover state / tint
+   * background, referenced throughout the app) aren't redefined here — they're
+   * already the 600 and 100 steps of the ramps above, which is exactly the
+   * hover-shade/tint-background role those two ramp steps play everywhere else
+   * in the Organic system too. Redefining them here would just self-reference. */
+
+  --color-tabs-bg: var(--color-neutral-200);
+  --color-input-bg: var(--color-bg-card);
+  --color-input-border: var(--color-neutral-400);
+  --color-chip-positive-bg: var(--color-accent-2-100);
+  --color-chip-positive-text: var(--color-accent-2-800);
+  --color-chip-negative-bg: var(--color-accent-100);
+  --color-chip-negative-text: var(--color-accent-800);
+  --color-chip-neutral-bg: var(--color-neutral-200);
+  --color-chip-neutral-text: var(--color-neutral-700);
+
+  --shadow-sm: 0 1px 2px rgba(46, 43, 37, 0.14);
+  --shadow-md: 0 3px 10px rgba(46, 43, 37, 0.16);
+  --shadow-lg: 0 12px 32px rgba(46, 43, 37, 0.22);
+}
+
+[data-theme='dark'] {
+  --color-bg-page: #211a12;
+  --color-bg-card: #2b2219;
+  --color-border: #43372a;
+  --color-text: var(--color-neutral-100);
+  --color-text-muted: #b3a58e;
+
+  --color-accent-bg: var(--color-neutral-100);
+  --color-accent-text: var(--color-neutral-900);
+
+  /* Brighter/lighter ramp steps than light mode uses for the same roles — a
+   * dark background needs a lighter accent to hold the same contrast, same
+   * reasoning the previous dark values already followed, just re-picked from
+   * the now-precise ramp instead of hand-tuned one-offs. */
+  --color-accent: var(--color-accent-400);
+  --color-accent-600: var(--color-accent-300);
+  --color-accent-100: var(--color-accent-800);
+  --color-accent-2: var(--color-accent-2-400);
+  --color-accent-2-600: var(--color-accent-2-300);
+  --color-accent-2-100: var(--color-accent-2-800);
+
+  --color-tabs-bg: #332a1f;
+  --color-input-bg: #2b2219;
+  --color-input-border: #4a3d2d;
+  --color-chip-positive-bg: var(--color-accent-2-800);
+  --color-chip-positive-text: var(--color-accent-2-200);
+  --color-chip-negative-bg: var(--color-accent-800);
+  --color-chip-negative-text: var(--color-accent-200);
+  --color-chip-neutral-bg: #332a1f;
+  --color-chip-neutral-text: #cabfa8;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  /* Real values on iOS/Android native builds via env(); 0px on plain web, so this
+   * is a no-op there. Needed because viewport-fit=cover (index.html) lets our
+   * background paint under the notch/status bar and gesture bar — without these,
+   * app-bar buttons and bottom nav would render underneath the OS chrome instead
+   * of just behind a decorative strip of background color. */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background: var(--color-bg-page);
+  color: var(--color-text);
+  /* Left/right so landscape on a notched phone doesn't clip content into the
+   * cutout; top/bottom handled per-screen (app bar / bottom nav) rather than
+   * here, since padding the whole body would double up wherever a component
+   * already has its own fixed top or bottom bar. */
+  padding-left: var(--safe-area-left);
+  padding-right: var(--safe-area-right);
+  /* "contain" (not "none"): stops an overscroll at a list's top/bottom edge from
+   * chaining into the browser's own pull-to-refresh or edge-swipe-back gesture —
+   * which reads as a bug in a packaged app ("why did my app just refresh/close")
+   * — while still letting every scrollable element (the page itself, .overlay,
+   * .avatar-picker) scroll completely normally within its own bounds. */
+  overscroll-behavior-y: contain;
+  /* Android's WebView paints a grey flash on every tap by default; this is the
+   * standard way to turn that off in favor of each interactive element's own
+   * :hover/:active styling (already themed — see the button rules below). */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Removes the ~300ms tap-response delay some mobile browsers still apply while
+ * waiting to see if a tap becomes a double-tap-to-zoom gesture — since this app
+ * doesn't rely on double-tap-zoom anywhere, buttons/links should feel instant. */
+a,
+button {
+  touch-action: manipulation;
+}
+
+/* Caprasimo is the system's only display voice (see the Organic guide's "Don't" —
+ * no condensed/geometric faces alongside it) — every heading gets it, body text
+ * stays on Figtree. Sizes are deliberately left to each screen's own styles
+ * (unlike the source system, which sets a fixed h1–h6 scale) since components
+ * already size their headings individually for their context — only the shared
+ * voice (family/weight/tracking/leading) is asserted globally. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+}
+
+/* Generic utility classes used across BOTH the desktop `.page` layout and every
+ * mobile screen (`.mobile-page`, `.mobile-trip-page`) — kept unscoped so they work
+ * no matter which wrapper a template happens to use. Previously these lived nested
+ * inside `.page { ... }` only, which meant every "muted" secondary-text span and
+ * every error message on mobile silently rendered as plain unstyled black text. */
+.error {
+  color: var(--color-chip-negative-text);
+}
+
+.muted {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.positive {
+  color: var(--color-chip-positive-text);
+}
+
+.negative {
+  color: var(--color-chip-negative-text);
+}
+
+@keyframes skeletonPulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Generic placeholder block for loading states — set a width/height inline (or via a
+ * more specific class) wherever it's used. Pulses gently instead of a flat "Loading…"
+ * so the page hints at its real layout while data is still in flight. */
+.skeleton {
+  background: var(--color-border);
+  border-radius: 6px;
+  animation: skeletonPulse 1.3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+.password-field {
+  position: relative;
+  display: flex;
+
+  input {
+    flex: 1;
+    width: 100%;
+    padding-right: 3.5rem;
+  }
+
+  .toggle-visibility {
+    position: absolute;
+    right: 0.4rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 0.3rem 0.5rem;
+    min-height: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    // Was a hardcoded blue predating the Tally retheme (same issue .link-button's
+    // comment above describes) — now the same accent-600 token every other text
+    // link/toggle in the app uses.
+    color: var(--color-accent-600);
+    cursor: pointer;
+  }
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  // Was a hardcoded #1f4e79/#b00020 (plain blue/red) predating the Tally
+  // retheme — never updated when the rest of the app moved to this palette,
+  // so every plain text link (Copy trip code, Edit/Delete on an expense,
+  // Cancel a sent friend request, etc.) still looked like the old theme even
+  // after everything around it was reskinned. accent-600/chip-negative-text
+  // are the same tokens Login/Register's own text links and the balance
+  // pills already use, so this now matches instead of clashing.
+  color: var(--color-accent-600);
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+
+  &.danger {
+    color: var(--color-chip-negative-text);
+  }
+}
+
+/* Base input/button/card treatment, Organic-styled — used unscoped so it applies
+ * everywhere a template still uses plain <button>/<input>/<select> rather than the
+ * newer .btn-* classes (trip-detail, add-expense, settlement — not yet individually
+ * redesigned, see mobile/PRODUCTION_REVIEW.md). Pill buttons and big-radius inputs
+ * per the design system's "Do: over-round" guidance. */
+button {
+  font-family: var(--font-body);
+}
+
+input,
+select,
+textarea {
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius-md);
+  background: var(--color-input-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  /* Must stay >= 16px, not a smaller rem value that just happens to compute close
+   * to it: iOS Safari/WKWebView auto-zooms the whole page on focus for any input
+   * with a computed font-size under 16px, and there's no way to opt out of that
+   * behavior other than not triggering it. 1rem = 16px at this project's default
+   * root size. */
+  font-size: 1rem;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+/* :where() wraps the whole :not() chain so this selector's specificity is just
+ * "button" (a bare element selector) — NOT "button" plus six chained :not(.class)
+ * exclusions, which is what it was before and which made this rule MORE specific
+ * than ordinary single/double-class component selectors like .chip, .chip.selected,
+ * .tabs button, .split-toggle button, .add-member-pill, and .member-card.selected.
+ * Those all set their own `background`, but every one of them was silently losing
+ * that fight to this rule's default orange fill — e.g. every category chip and
+ * every trip-detail tab rendered as an identical solid-orange pill regardless of
+ * selected state, because this rule's background always won. :where() keeps the
+ * exact same exclusion behavior (still skips .fab/.theme-toggle/etc.) while
+ * dropping the specificity to what a plain `button {}` rule would have, so a
+ * component's own more-specific class rule wins the cascade the normal way. */
+button:where(:not(.fab):not(.theme-toggle):not(.user-avatar):not(.link-button):not(.toggle-visibility):not(.settings-row)) {
+  padding: 0.7rem 1.4rem;
+  min-height: 44px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  /* Matches the design system's own .btn-primary rule (button text = the page
+   * background color, not a fixed white) — which also makes this correct in
+   * dark mode for free: --color-bg-page flips to a near-black there, so text
+   * on the (now light) dark-mode accent fill stays legible automatically
+   * instead of white-on-light-peach. */
+  color: var(--color-bg-page);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    transform 0.1s ease;
+
+  &:hover {
+    background: var(--color-accent-600);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  &.secondary {
+    background: var(--color-tabs-bg);
+    color: var(--color-text);
+
+    &:hover {
+      filter: brightness(0.96);
+    }
+  }
+}
+
+.page {
+  max-width: 720px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  h2 {
+    margin-top: 0;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem 0;
+
+    li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--color-border);
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+  }
+
+  form {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.9rem;
+  }
+
+  .error {
+    color: var(--color-chip-negative-text);
+  }
+
+  .muted {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    margin-left: 0.5rem;
+  }
+
+  .positive {
+    color: var(--color-chip-positive-text);
+  }
+
+  .negative {
+    color: var(--color-chip-negative-text);
+  }
+}
+
+/* Mobile layout: below ~640px, give up the card padding/margins for full-width
+ * screens, stack the header, and make every form control and button a full-width,
+ * easy-to-tap target instead of the cozy desktop row layout. */
+@media (max-width: 640px) {
+  .page {
+    margin: 0;
+    padding: 0.75rem;
+
+    section {
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: var(--radius-md);
+    }
+
+    header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+
+      h1 {
+        font-size: 1.35rem;
+      }
+    }
+
+    form {
+      flex-direction: column;
+      align-items: stretch;
+
+      label {
+        width: 100%;
+      }
+    }
+
+    input,
+    select {
+      width: 100%;
+      font-size: 1rem;
+      min-height: 44px;
+    }
+
+    button {
+      width: 100%;
+    }
+
+    li {
+      flex-wrap: wrap;
+    }
+  }
+}
+
+/* Shared mobile page shell — used (unscoped, so it reaches every feature's
+ * component template regardless of Angular's per-component style encapsulation)
+ * by trip-list, trip-detail, friends, analytics and profile alike. */
+.mobile-page {
+  /* 100vh is the iOS Safari/WKWebView trap: it's measured against the *largest*
+   * possible viewport (toolbar hidden), so with the address bar/toolbar visible
+   * the page is actually shorter than 100vh, which either clips content or causes
+   * a jarring resize-jump as the toolbar shows/hides while scrolling. 100dvh
+   * tracks the *current* visible viewport instead. The 100vh line stays first as
+   * a fallback for any WebView old enough not to support dvh — real, if
+   * decreasingly likely, on some Android OEM builds. */
+  min-height: 100vh;
+  min-height: 100dvh;
+  /* Extra bottom padding clears the fixed bottom tab bar (app/shared/tab-bar.ts) —
+   * its own height plus the safe-area inset, so the FAB and last card never sit
+   * underneath it. Screens that don't show the tab bar (trip detail) just carry
+   * a little unused bottom padding, which is harmless. */
+  padding: calc(1rem + var(--safe-area-top)) 1rem calc(5.5rem + var(--safe-area-bottom));
+  background: var(--color-bg-page);
+  position: relative;
+}
+
+.mobile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+
+  h1 {
+    font-size: 1.8rem;
+    margin: 0;
+  }
+}
+
+/* Shared "not built yet" screen (Friends, Analytics — see their .ts files for why
+ * these are honest placeholders rather than screens with fake data). Global/
+ * unscoped so both feature folders can use it without duplicating the same rules
+ * in two component stylesheets. Pairs with .mobile-page/.mobile-header above for
+ * the page shell/header via shared class names on the template root. */
+.placeholder-page {
+  display: flex;
+  flex-direction: column;
+}
+
+.placeholder-card {
+  margin-top: 1.5rem;
+  padding: 2rem 1.5rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+
+  h2 {
+    margin: 0 0 0.6rem;
+    font-size: 1.3rem;
+  }
+
+  p {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+}
+
+.placeholder-mark {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 1.25rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-2));
+}

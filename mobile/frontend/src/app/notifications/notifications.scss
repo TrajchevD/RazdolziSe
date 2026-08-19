@@ -1,0 +1,95 @@
+/* .mobile-page/.mobile-header/.error/.muted/.skeleton/.link-button come from
+ * the global styles.scss — see invites.scss's own note for why small
+ * presentational bits like these stay local instead. */
+
+.notifications-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  h1 {
+    margin: 0;
+  }
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  color: var(--color-text);
+  line-height: 1;
+  padding: 0.25rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.empty-note {
+  margin: 0.5rem 0 0;
+}
+
+.notification-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.notification-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 0.9rem 1rem;
+  box-shadow: var(--shadow-sm);
+
+  // A left accent bar rather than a full background tint — easier to scan a
+  // long list at a glance than a subtler tint would be, without being as loud
+  // as a badge on every single row.
+  &.unread {
+    border-left: 3px solid var(--color-accent);
+  }
+}
+
+.notification-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.notification-message {
+  font-weight: 500;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.dismiss-button {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-page);
+  color: var(--color-accent-2-600);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.delete-button {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-page);
+  color: var(--color-chip-negative-text);
+  font-size: 0.95rem;
+  cursor: pointer;
+}

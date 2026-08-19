@@ -1,0 +1,1441 @@
+fieldset {
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  legend {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    padding: 0 0.25rem;
+  }
+}
+
+.checkbox {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.5rem !important;
+}
+
+.exact-row {
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem !important;
+
+  input {
+    width: 6rem;
+  }
+}
+
+.expense-list > li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.expense-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: baseline;
+}
+
+.expense-shares {
+  margin: 0;
+  padding-left: 1rem;
+  list-style: disc;
+
+  li {
+    padding: 0.1rem 0;
+    border-bottom: none;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+}
+
+.settlement-list > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.row-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.5rem;
+}
+
+// .link-button used to be redefined here too — an exact copy-paste of the
+// global one in styles.scss (same hardcoded pre-retheme blue/red). Now that
+// the global rule is fixed and themed, this duplicate just risked drifting
+// out of sync with it again, so it's gone — the global .link-button applies
+// here the normal way.
+
+.payment-row {
+  background: var(--color-chip-positive-bg);
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem !important;
+}
+
+@media (max-width: 640px) {
+  .settlement-list > li {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
+
+    button {
+      width: 100%;
+    }
+  }
+
+  .expense-summary {
+    .row-actions {
+      margin-left: 0;
+      width: 100%;
+    }
+  }
+}
+
+/* ================================================================
+ * Mobile redesign — everything below only ever renders when
+ * ViewportService.isMobile() is true (see trip-detail.html), so it
+ * doesn't need its own media query to stay out of the desktop layout.
+ * ================================================================ */
+
+.mini-avatar {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-trip-page {
+  /* vh fallback + dvh override — see .mobile-page in styles.scss for why. The
+   * bottom tab bar now persists on every signed-in screen including this one
+   * (see app.ts's showTabBar), so 6rem here is intentionally already more than
+   * .mobile-page's 5.5rem elsewhere — it was clearing the FAB/home-indicator
+   * alone before, and comfortably clears the tab bar too without needing a bump. */
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: calc(1rem + var(--safe-area-top)) 1rem calc(6rem + var(--safe-area-bottom));
+  background: var(--color-bg-page);
+}
+
+.mobile-trip-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+
+  h1 {
+    font-size: 1.3rem;
+    margin: 0;
+  }
+
+  .spacer {
+    flex: 1;
+  }
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  color: var(--color-text);
+  cursor: pointer;
+  text-decoration: none;
+  padding: 0.25rem 0.5rem;
+  min-height: 40px;
+  min-width: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.summary-card {
+  display: flex;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+
+  .summary-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    text-align: center;
+    border-left: 1px solid var(--color-border);
+
+    &:first-child {
+      border-left: none;
+    }
+  }
+
+  .label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--color-text-muted);
+  }
+
+  .value {
+    font-size: 1.1rem;
+    font-weight: 700;
+
+    // Was hardcoded #2f9e44/#b00020 (plain green/red, pre-retheme) — the
+    // chip-positive/negative tokens are the same green/red the trip-list
+    // balance pills already use for this exact meaning, so this now matches
+    // instead of using a different, unthemed pair of colors.
+    &.positive {
+      color: var(--color-chip-positive-text);
+    }
+
+    &.negative {
+      color: var(--color-chip-negative-text);
+    }
+  }
+}
+
+.settle-up-cta {
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: 1rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-bg);
+  color: var(--color-accent-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tabs {
+  display: flex;
+  background: var(--color-tabs-bg);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem;
+  margin-bottom: 1rem;
+
+  button {
+    flex: 1;
+    min-height: 38px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    cursor: pointer;
+
+    &.active {
+      background: var(--color-bg-card);
+      color: var(--color-text);
+      box-shadow: var(--shadow-sm);
+    }
+  }
+}
+
+.date-heading {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin: 1rem 0 0.4rem;
+}
+
+.mobile-expense-list,
+.mobile-balance-list,
+.mobile-activity-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mobile-expense-list > li {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+}
+
+.mobile-expense-list > li.editable,
+.mobile-activity-list > li.editable {
+  cursor: pointer;
+}
+
+.category-tile {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: var(--radius-sm);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expense-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.expense-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.expense-sub {
+  font-size: 0.75rem;
+}
+
+.expense-amounts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+}
+
+.expense-total {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.expense-share {
+  font-size: 0.7rem;
+}
+
+.expense-original {
+  font-size: 0.7rem;
+}
+
+.currency-badge {
+  font-size: 0.65em;
+  font-weight: 500;
+  vertical-align: middle;
+}
+
+.field-hint {
+  font-size: 0.8rem;
+  margin: -0.5rem 0 0.75rem;
+}
+
+.mobile-balance-list > li {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+}
+
+.balance-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.add-friend-button {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.friend-tag {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.balance-amount {
+  font-weight: 600;
+
+  // Was hardcoded #2f9e44/#b00020 (plain green/red, pre-retheme) — same
+  // chip-positive/negative tokens the trip-list balance pills and this
+  // screen's own .summary-card .value already use for this exact meaning.
+  &.positive {
+    color: var(--color-chip-positive-text);
+  }
+
+  &.negative {
+    color: var(--color-chip-negative-text);
+  }
+}
+
+.mobile-activity-list > li {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
+  border-radius: 50%;
+  // Was hardcoded #1f4e79/#2f9e44 (plain blue/green, pre-retheme) — themed
+  // tokens now, same as everywhere else "pending" vs. "settled" is shown.
+  background: var(--color-accent);
+
+  &.settled {
+    background: var(--color-accent-2);
+  }
+}
+
+.activity-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.activity-title {
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activity-sub {
+  font-size: 0.72rem;
+}
+
+.activity-amount {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.fab {
+  position: fixed;
+  right: 1.25rem;
+  // Sits above the fixed bottom tab bar (now persistent on every signed-in
+  // screen, see app.ts's showTabBar) plus its safe-area inset — same 4.75rem
+  // clearance as trip-list's own .fab, so this stopped overlapping the bar
+  // once it started showing here too.
+  bottom: calc(4.75rem + var(--safe-area-bottom));
+  width: 56px;
+  height: 56px;
+  min-height: 0;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-accent-bg);
+  color: var(--color-accent-text);
+  font-size: 1.75rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+}
+
+/* ---- Full-screen overlays (Add expense / Settle up) ---- */
+
+/* Was a small 24px nudge-up + fade; now a real off-screen slide, matching the
+ * imported design's own bottom-sheet entrance (`sheetUp` in the prototype's
+ * AppScreen.dc.html) — these overlays stay full-height (Add Expense in particular
+ * has more fields than the design's single-currency mock — currency, date, and a
+ * custom exact-split grid — so a partial-height sheet risks double-scrolling), but
+ * the *entrance/exit* and the rounded top corners below give them the same
+ * sheet-like feel as the design's Add Expense / Settle Up sheets. Timing function
+ * matches the design's own `sheetUp` easing. */
+@keyframes overlaySlideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Reverse of the above — plays when an overlay is closing (see .overlay.closing
+ * and trip-detail.ts's beginCloseOverlay/onOverlayAnimationEnd) so a sheet visibly
+ * slides back down instead of vanishing the instant its controlling signal flips
+ * false, which is all Angular's `@if` does on its own. */
+@keyframes overlaySlideDown {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  // Rounded top corners give this full-height overlay the same sheet-like
+  // silhouette as the design's bottom sheets, even though (unlike the design)
+  // it stays full height to fit the 4-step wizard's content. overflow: hidden
+  // below clips .overlay-header's own square corners to match.
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--color-bg-page);
+  // Above the tab bar's z-index: 30 (tab-bar.scss) — the bar now persists on
+  // every signed-in screen including this one (see app.ts's showTabBar), so a
+  // full-screen modal like Add Expense/Members needs to actually cover it
+  // instead of the bar floating on top of the modal's own footer buttons.
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  // The overlay itself is NOT a scroll container anymore — header, step
+  // progress, and footer are plain flex children that never move, and
+  // .overlay-body (flex: 1, its own overflow-y: auto below) is the only thing
+  // that can ever scroll, and only once its content genuinely exceeds the
+  // space between them. This is what used to cause the step-change "jump to
+  // top" — the whole overlay (header included) was one scrolling element, so
+  // swapping to a shorter step could leave a stale scroll offset for a frame
+  // before the browser clamped it. With the chrome fixed outside the scroll
+  // area entirely, there's nothing left to jump.
+  overflow: hidden;
+  animation: overlaySlideUp 0.22s cubic-bezier(0.2, 0.8, 0.3, 1);
+
+  form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  // Set by trip-detail.ts's beginCloseOverlay while the exit animation plays —
+  // `forwards` holds the slid-down-off-screen end state for the brief gap before
+  // onOverlayAnimationEnd actually unmounts the element, and pointer-events: none
+  // stops a stray tap from doing anything to content that's already animating away.
+  &.closing {
+    animation: overlaySlideDown 0.18s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+    pointer-events: none;
+  }
+}
+
+.tab-panel {
+  animation: tabFadeIn 0.18s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .overlay.closing,
+  .tab-panel {
+    animation: none;
+  }
+}
+
+/* Purely decorative — matches the drag-handle bar on the design's own bottom
+ * sheets (a plain centered pill, not functionally draggable there either).
+ * Sits above .overlay-header, inside the safe area, so it doesn't collide
+ * with the notch on devices that have one. */
+.sheet-handle {
+  width: 36px;
+  height: 4px;
+  margin: calc(0.5rem + var(--safe-area-top)) auto 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-neutral-300);
+  flex-shrink: 0;
+}
+
+.overlay-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  /* This overlay is `position: fixed; inset: 0` (see .overlay below), so it
+   * paints under the notch/status bar on its own. Safe-area clearance now
+   * lives on .sheet-handle above (the first thing in the overlay) rather than
+   * here, so this stays a flat padding — adding safe-area-top to both would
+   * double the offset and push the close/save row too far down. */
+  padding: 0.75rem 1rem 1rem;
+  background: var(--color-bg-card);
+  border-bottom: 1px solid var(--color-border);
+  // No longer position: sticky — .overlay itself doesn't scroll anymore (see
+  // its own comment), so this is just a normal flex child that's always at
+  // the top already, nothing to stick against.
+  flex-shrink: 0;
+
+  h2 {
+    flex: 1;
+    text-align: center;
+    font-size: 1.05rem;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+  }
+
+  // Shown in the "Add expense" header only while expenseFormMode() === 'steps'
+  // — a lightweight "Step 2 of 3" progress readout under the sheet title.
+  .step-indicator {
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .overlay-title {
+    flex: 1;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+
+    h2 {
+      text-align: center;
+    }
+  }
+
+  .spacer {
+    width: 3rem;
+  }
+}
+
+.overlay-body {
+  flex: 1;
+  // The one scrollable region left in any overlay — see .overlay's comment.
+  // min-height: 0 is required here: without it, a flex child defaults to
+  // min-height: auto (its content's natural height), which would let the body
+  // grow taller than the space actually available instead of scrolling within
+  // it, silently pushing .overlay-footer off the bottom of the screen.
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  input {
+    min-height: 44px;
+    padding: 0.6rem;
+    border: 1px solid var(--color-input-border);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+    background: var(--color-input-bg);
+    color: var(--color-text);
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+
+    input {
+      margin-bottom: 0;
+    }
+  }
+}
+
+/* Groups a heading + form + error + helper text into one visually tight unit —
+ * used by the "Add a member" / "Add a guest" forms in the mobile Members overlay.
+ * Without this, each piece was a direct flex child of .overlay-body, so the parent's
+ * gap AND each element's own margin (section-label's margin-top, form's
+ * margin-bottom) stacked on top of each other, leaving noticeably more space
+ * between a label/input/button/helper-text than between unrelated sections. */
+.add-form-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  .section-label {
+    margin: 0;
+  }
+
+  form {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 0;
+
+    input {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .primary-button {
+      width: auto;
+      min-height: 44px;
+      padding: 0 1.1rem;
+      white-space: nowrap;
+    }
+  }
+
+  .muted {
+    margin: 0;
+  }
+
+  .error {
+    margin: 0;
+  }
+}
+
+/* ---- Add members (Friends / Invite user / Guest) — see trip-detail.ts's
+ * openAddMemberMode. Replaces the old flat "add member by email" form; the
+ * three pills are the only entry point into the member-adding sub-panels. ---- */
+
+.add-members-card {
+  align-items: stretch;
+}
+
+.add-member-options {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.add-member-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 44px;
+  padding: 0.5rem 0.4rem;
+  border: 2px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    border-color: var(--color-accent-2);
+  }
+
+  /* Selected state uses THREE signals at once (fill, not just a border tint;
+   * bold text was already there; a filled circle background behind the emoji)
+   * so it reads at a glance even for someone who can't distinguish the border
+   * color change alone — see the color-contrast pass this accompanies. */
+  &.active {
+    border-color: var(--color-accent-bg);
+    background: var(--color-accent-bg);
+    color: var(--color-accent-text);
+  }
+}
+
+.pill-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.add-member-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--color-border);
+
+  form {
+    flex-direction: row;
+    align-items: center;
+
+    input {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+}
+
+.member-pick-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 15rem;
+  overflow-y: auto;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--color-bg-page);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 0.5rem 0.65rem;
+  }
+}
+
+.search-result-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--color-bg-page);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.5rem 0.65rem;
+}
+
+/* Info tab's small "Trip details" card — only real TripResponse fields
+ * (currency, created date), no fabricated budget/status like the design's mock
+ * shows (this data model doesn't have those). */
+.trip-details-card {
+  gap: 0.5rem;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+
+  span:last-child {
+    font-weight: 600;
+  }
+}
+
+.join-code-card {
+  align-items: flex-start;
+}
+
+.join-code-display {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.join-code-text {
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  letter-spacing: 0.12em;
+}
+
+.join-code-qr {
+  align-self: center;
+  border-radius: var(--radius-sm);
+  /* The service serves a plain white-background PNG regardless of app theme —
+   * a light frame keeps it readable (and scannable) against the dark theme
+   * instead of white pixels butting straight up against a dark card. */
+  background: #fff;
+  padding: 6px;
+}
+
+/* ---- Desktop trip-detail: reuses the same mini-avatar/category-tile/balance/
+ * activity classes defined above for mobile (all unscoped, so they apply here too),
+ * just arranged for the wider `.page` layout. ---- */
+
+.desktop-add-forms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+
+  .add-form-card {
+    flex: 1;
+    min-width: 220px;
+  }
+}
+
+.desktop-member-list {
+  margin-bottom: 0;
+}
+
+.field-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.15rem;
+}
+
+.amount-input {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+
+  .currency {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+
+  .currency-select {
+    flex: 0 0 auto;
+    width: auto;
+    margin-bottom: 0;
+    /* >= 16px — same iOS auto-zoom-on-focus reasoning as the global input rule
+     * in styles.scss; applies to <select> too, not just text inputs. */
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.4rem 0.5rem;
+  }
+
+  input {
+    flex: 1;
+    margin-bottom: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    border: none;
+    border-bottom: 2px solid var(--color-input-border);
+    border-radius: 0;
+    padding: 0.3rem 0;
+    background: transparent;
+    color: var(--color-text);
+  }
+
+  /* Step 1 of the add-expense wizard (see trip-detail.html) — amount is the one
+   * thing every expense needs, so it gets a bigger, more deliberate entry point
+   * than the same field would as one line among many in a long form. */
+  &.hero {
+    margin-top: 0.5rem;
+    margin-bottom: 1.25rem;
+
+    input {
+      font-size: 2.4rem;
+      font-family: var(--font-heading);
+    }
+
+    .currency-select {
+      font-size: 1.1rem;
+    }
+  }
+}
+
+/* Add Expense's category picker — a grid of large, distinct cards (icon tile
+ * + label stacked, same visual language as .member-card below) instead of the
+ * old small horizontal-scroll chip row. Bigger targets are easier to tap
+ * accurately on a phone, and six colored circles in a row all roughly the
+ * same size read as "pick one of these six things" much more clearly than a
+ * cramped scrolling strip did. auto-fill keeps 3 per row on a typical phone
+ * width without a hardcoded column count. */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 1.1rem;
+}
+
+.category-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 0.4rem;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    border-color: var(--color-accent-2);
+  }
+
+  /* Same "more than one signal" treatment as .member-card.selected — filled
+   * border, tinted background, AND a shadow, not color alone. */
+  &.selected {
+    border-color: var(--color-accent-bg);
+    background: color-mix(in srgb, var(--color-accent-bg) 16%, var(--color-bg-card));
+    box-shadow: var(--shadow-md);
+  }
+}
+
+.category-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.category-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Add Expense's "Paid by" row — a compact single-select pill list (mini-avatar +
+ * name), not the larger .member-card grid below it (that stays for the Equal/
+ * Exact split section, where seeing everyone at once matters more). */
+.paid-by-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.member-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.7rem 0.3rem 0.3rem;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 40px;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+
+  &:hover {
+    border-color: var(--color-accent-2);
+  }
+
+  // Same "more than one signal" treatment as .chip.selected just below.
+  &.selected {
+    border-color: var(--color-accent-bg);
+    background: color-mix(in srgb, var(--color-accent-bg) 16%, var(--color-bg-card));
+  }
+}
+
+/* "Split the remaining $X evenly among the rest" — sits between the exact-
+ * amount member grid and the "Entered X of Y" total line, so it reads as
+ * acting on the grid just above it rather than as a stray link. */
+.split-remaining-button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+}
+
+/* One-line explainer under the Equal/Custom split toggle — Add Expense used to
+ * rely on a whole dedicated wizard step's title for this ("How should it be
+ * split?"); now it's one small hint so the split section still reads clearly
+ * inside the single flowing form. */
+.split-hint {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 0.8rem;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.65rem 0.35rem 0.35rem;
+  border: 2px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  font-size: 0.8rem;
+  cursor: pointer;
+  min-height: 40px;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+
+  &:hover {
+    border-color: var(--color-accent-2);
+  }
+
+  /* Same "more than one signal" rule as .member-card.selected — filled border
+   * AND a tinted background AND bold text, not just a thin border tint against
+   * an otherwise-identical unselected chip. */
+  &.selected {
+    border-color: var(--color-accent-bg);
+    background: color-mix(in srgb, var(--color-accent-bg) 16%, var(--color-bg-card));
+    font-weight: 700;
+  }
+}
+
+.chip-tile {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: white;
+  font-size: 0.55rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---- Member selection grid — "Paid by" (single-select) and "Split" (multi-
+ * select) both use this same larger, deliberate card treatment instead of the
+ * old small horizontal-scroll avatar row / cramped list row. Sized to fill
+ * available width via auto-fill rather than a fixed column count, so 2 members
+ * and 12 members both use the space sensibly. No max-height/overflow of its
+ * own — .overlay is already the scroll container, so a short list just fits
+ * and a long one scrolls the whole step naturally, same as everything else in
+ * this overlay. ---- */
+
+.member-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.member-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.1rem 0.5rem 0.85rem;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    border-color: var(--color-accent-2);
+  }
+
+  /* Selected state stacks THREE independent signals — filled border, tinted
+   * background, and a checkmark badge — so it's never conveyed by color alone
+   * (see the wider color-contrast pass this belongs to). */
+  &.selected {
+    border-color: var(--color-accent-bg);
+    background: color-mix(in srgb, var(--color-accent-bg) 14%, var(--color-bg-card));
+    box-shadow: var(--shadow-md);
+  }
+}
+
+.member-avatar {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  border-radius: 50%;
+  color: white;
+  font-size: 1.05rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.member-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.member-amount {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-accent-2);
+}
+
+.member-check {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  // Was hardcoded #2f9e44 (pre-retheme). Uses a fixed ramp step rather than
+  // the theme-flipping --color-accent-2 token — this badge is always paired
+  // with a fixed white checkmark, so it needs a step dark enough to hold that
+  // contrast in both themes, not one that gets lighter in dark mode.
+  background: var(--color-accent-2-700);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.exact-card {
+  cursor: default;
+
+  input {
+    width: 100%;
+    margin-bottom: 0;
+    text-align: center;
+    font-weight: 600;
+  }
+}
+
+.split-toggle {
+  display: flex;
+  background: var(--color-tabs-bg);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem;
+  margin-bottom: 0.75rem;
+
+  button {
+    flex: 1;
+    min-height: 38px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    cursor: pointer;
+
+    /* Surface swap + a colored bottom bar + bold+colored text — the plain
+     * surface-swap alone (still kept, it's what the mobile .tabs pill uses
+     * too) read too close to unselected at a glance, so this adds two more
+     * signals on top rather than relying on the shadow by itself. */
+    &.active {
+      background: var(--color-bg-card);
+      color: var(--color-accent-2);
+      font-weight: 700;
+      box-shadow: var(--shadow-sm), inset 0 -2px 0 var(--color-accent-bg);
+    }
+  }
+}
+
+.overlay-footer {
+  /* Same reasoning as .overlay-header above, for the bottom edge — without this,
+   * "Save"/"Settle" sits flush against the home indicator (iOS) or gesture bar
+   * (Android) instead of clear of it. */
+  padding: 1rem 1rem calc(1rem + var(--safe-area-bottom));
+  background: var(--color-bg-card);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  // No longer position: sticky — .overlay doesn't scroll (see its comment), so
+  // this is just the last flex child, always at the bottom already.
+  flex-shrink: 0;
+}
+
+.primary-button {
+  width: 100%;
+  min-height: 48px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-bg);
+  color: var(--color-accent-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+// Both were hardcoded #f3c2c2/#b00020 (pre-retheme) — themed to the same
+// negative/danger tokens as everywhere else in the app.
+.danger-zone {
+  border: 1px solid var(--color-chip-negative-bg);
+}
+
+.danger-button {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--color-chip-negative-bg);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-card);
+  color: var(--color-chip-negative-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+// The Add Expense sheet's "Back" button, one step above .primary-button in
+// the .overlay-footer's stacked button column — same shape as .danger-button
+// (outlined, not filled) but neutral rather than destructive.
+.secondary-button {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+// "Use single-page form instead" / "Use guided steps instead" — a quiet
+// escape hatch under the Add Expense sheet's fields, not competing visually
+// with the actual form controls above it.
+.form-mode-toggle {
+  margin: 0.75rem 0 0;
+  text-align: center;
+  font-size: 0.8rem;
+
+  a {
+    color: var(--color-accent-600);
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.section-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin: 1rem 0 0.5rem;
+}
+
+.suggested-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .arrow {
+    color: var(--color-text-muted);
+  }
+
+  .txn-text {
+    flex: 1;
+    font-size: 0.8rem;
+    line-height: 1.3;
+    color: var(--color-text);
+  }
+}
+
+.settle-button {
+  min-height: 36px;
+  padding: 0.3rem 0.9rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  // Was hardcoded #2f9e44 — same fixed-ramp-step reasoning as .member-check
+  // above (paired with fixed white text).
+  background: var(--color-accent-2-700);
+  color: white;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}
+
+/* ---- Spending-by-category pie/donut (shared by the desktop section and the
+ * mobile Categories tab) ---- */
+
+.mobile-trip-page select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.6rem;
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  background: var(--color-input-bg);
+  color: var(--color-text);
+}
+
+.pie-wrap {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  margin: 0.5rem auto 1rem;
+}
+
+.pie-chart {
+  width: 100%;
+  height: 100%;
+}
+
+.pie-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.pie-total {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.pie-legend {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0;
+    border-bottom: none;
+    font-size: 0.85rem;
+  }
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  min-width: 10px;
+  border-radius: 50%;
+}
+
+.legend-label {
+  flex: 1;
+}
+
+.legend-amount {
+  font-weight: 600;
+}
+
+.legend-percent {
+  min-width: 2.5rem;
+  text-align: right;
+}

@@ -1,0 +1,84 @@
+<div class="mobile-page">
+  <header class="mobile-header">
+    <h1>Requests</h1>
+  </header>
+
+  @if (loadError()) {
+    <p class="error">{{ loadError() }} <button type="button" class="link-button" (click)="load()">Retry</button></p>
+  }
+
+  @if (isLoading()) {
+    <ul class="invite-list" aria-hidden="true">
+      @for (i of [1, 2]; track i) {
+        <li class="invite-card">
+          <span class="skeleton" style="width: 60%; height: 1rem;"></span>
+          <span class="skeleton" style="width: 40%; height: 0.8rem; margin-top: 0.4rem;"></span>
+        </li>
+      }
+    </ul>
+  } @else {
+    <h2 class="section-label">Friend requests</h2>
+    @if (friendService.incomingRequests().length === 0) {
+      <p class="muted empty-note">No pending friend requests.</p>
+    } @else {
+      <ul class="invite-list">
+        @for (request of friendService.incomingRequests(); track request.id) {
+          <li class="invite-card">
+            <span class="mini-avatar" [style.background]="avatarColor(request.userId)">{{ initials(request.displayName) }}</span>
+            <div class="invite-info">
+              <span class="invite-trip">{{ request.displayName }}</span>
+              <span class="muted">#{{ request.tag }}</span>
+            </div>
+            <div class="invite-actions">
+              <button
+                type="button"
+                class="accept-button"
+                [disabled]="busyId() === request.id"
+                (click)="acceptFriendRequest(request.id)"
+              >Accept</button>
+              <button
+                type="button"
+                class="secondary decline-button"
+                [disabled]="busyId() === request.id"
+                (click)="declineFriendRequest(request.id)"
+              >Decline</button>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+
+    <h2 class="section-label">Trip invitations</h2>
+    @if (tripInvites().length === 0) {
+      <p class="muted empty-note">No pending trip invitations.</p>
+    } @else {
+      <ul class="invite-list">
+        @for (invite of tripInvites(); track invite.id) {
+          <li class="invite-card">
+            <span class="mini-avatar" [style.background]="avatarColor(invite.invitedByUserId)">{{
+              initials(invite.invitedByDisplayName)
+            }}</span>
+            <div class="invite-info">
+              <span class="invite-trip">{{ invite.tripName }}</span>
+              <span class="muted">Invited by {{ invite.invitedByDisplayName }} · {{ invite.createdAt | date: 'MMM d' }}</span>
+            </div>
+            <div class="invite-actions">
+              <button
+                type="button"
+                class="accept-button"
+                [disabled]="busyId() === invite.id"
+                (click)="acceptTripInvite(invite)"
+              >Accept</button>
+              <button
+                type="button"
+                class="secondary decline-button"
+                [disabled]="busyId() === invite.id"
+                (click)="declineTripInvite(invite)"
+              >Decline</button>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  }
+</div>

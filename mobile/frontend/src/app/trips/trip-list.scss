@@ -1,0 +1,393 @@
+.user-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+/* ---- Mobile redesign (only rendered when ViewportService.isMobile() is true) ----
+ * .mobile-page/.mobile-header themselves now live in the global styles.scss, not
+ * here — Friends/Analytics/Profile need the same page shell, and Angular's
+ * per-component style encapsulation means a class defined in *this* file
+ * wouldn't reach their templates even with an identical class name. Everything
+ * below is still trip-list-specific (the balance card, trip cards, FAB, etc.). */
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.theme-toggle {
+  background: none !important;
+  border: none;
+  min-height: 40px;
+  min-width: 40px;
+  padding: 0 !important;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  min-height: 0;
+  border-radius: 50%;
+  border: none;
+  color: white;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+}
+
+.bell-button {
+  position: relative;
+  min-height: 40px;
+  min-width: 40px;
+  font-size: 1.15rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: var(--color-text);
+}
+
+.bell-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  // Same "text = page background" pattern as the global button rule in
+  // styles.scss — keeps this legible against the accent fill in both themes.
+  color: var(--color-bg-page);
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* The dark "hero" balance card — matches the imported Tally design's Home screen
+ * (a near-black card up top with the balance in Caprasimo, "Settle up"/"Add
+ * expense" actions). This one is the *aggregate across every trip*, so it
+ * deliberately doesn't carry those two buttons — they only make sense scoped to
+ * a single trip (see trip-detail, which already has its own settle-up flow).
+ * --color-accent-bg/--color-accent-text are the two tokens this dark treatment
+ * has always used (see styles.scss) — only their values changed. */
+.overall-card {
+  background: var(--color-accent-bg);
+  color: var(--color-accent-text);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-md);
+
+  .label {
+    display: block;
+    font-size: 0.85rem;
+    opacity: 0.7;
+    margin-bottom: 0.25rem;
+  }
+
+  .amount {
+    display: block;
+    font-family: var(--font-heading);
+    /* clamp() instead of a fixed size + breakpoint: scales continuously down to
+     * ~29px on a 320px-wide phone (the narrowest realistic target) so a large
+     * balance in Caprasimo (a wide display face) can't overflow the card, without
+     * needing a separate media-query rule to maintain. */
+    font-size: clamp(1.8rem, 9vw, 2.5rem);
+    line-height: 1.1;
+    color: var(--color-accent-2);
+    overflow-wrap: break-word;
+  }
+
+  &.negative .amount {
+    color: var(--color-accent);
+  }
+
+  .breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    font-size: 0.8rem;
+
+    span {
+      padding: 0.3rem 0.7rem;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    // Was a hardcoded light green/orange predating the token system — the
+    // .amount rule three lines up already uses --color-accent-2/--color-accent
+    // directly for the exact same "value on the hero card" role (and already
+    // flips correctly per theme, same as everywhere else --color-accent-bg is
+    // used), so these two match it instead of carrying separate literals.
+    .positive {
+      color: var(--color-accent-2);
+    }
+
+    .negative {
+      color: var(--color-accent);
+    }
+  }
+}
+
+.section-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin: 0 0 0.5rem;
+}
+
+.trip-cards {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@keyframes tripCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.trip-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  /* animation-delay set per-card from the trip's index (see trip-list.html) so
+   * the list settles in with a light stagger instead of every card popping in
+   * at once — "both" keeps each card invisible until its own delay elapses
+   * rather than flashing at full opacity for a frame first. */
+  animation: tripCardIn 0.32s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trip-card {
+    animation: none;
+  }
+}
+
+.trip-card-link {
+  display: block;
+  /* Top padding lives on .trip-card-top itself (its gradient banner bleeds full
+   * width) — this only pads the balance-chip/member-count row underneath it. */
+  padding: 0 0 1rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+/* The gradient "photo" banner — stands in for a real trip cover photo (this app
+ * has no image upload, see mobile/PRODUCTION_REVIEW.md's feature list) using the
+ * same accent-to-accent-2 gradient direction as the auth cards' decorative mark,
+ * so the two treatments read as the same design language. Every trip currently
+ * gets the same gradient; a per-trip color (from avatar-color.ts's hashing
+ * approach) would be a nice, cheap follow-up. */
+.trip-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 1.15rem 1rem;
+  margin-bottom: 0.85rem;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-2));
+}
+
+.trip-name {
+  flex: 1;
+  min-width: 0;
+  // Fixed light text on the gradient cover banner — the banner itself doesn't
+  // flip with the page theme (it's always the accent-to-accent-2 gradient), so
+  // this stays a fixed light neutral rather than a theme-aware token.
+  color: var(--color-neutral-100);
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.avatar-stack {
+  display: flex;
+  flex-shrink: 0;
+
+  .mini-avatar {
+    margin-left: -0.5rem;
+    border: 2px solid rgba(249, 244, 237, 0.7);
+
+    &:first-child {
+      margin-left: 0;
+    }
+  }
+}
+
+.trip-card-link > .balance-chip {
+  margin: 0 1rem;
+}
+
+.mini-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-overflow {
+  background: var(--color-text-muted) !important;
+  font-size: 0.6rem;
+}
+
+.balance-chip {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-chip-positive-text);
+  background: var(--color-chip-positive-bg);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+
+  &.negative {
+    color: var(--color-chip-negative-text);
+    background: var(--color-chip-negative-bg);
+  }
+
+  &.settled {
+    color: var(--color-chip-neutral-text);
+    background: var(--color-chip-neutral-bg);
+  }
+}
+
+.create-trip-panel {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  input {
+    min-height: 44px;
+  }
+
+  button {
+    font-weight: 600;
+  }
+
+  > .link-button {
+    margin-top: 0.75rem;
+  }
+}
+
+// Overrides .create-trip-panel's `form { flex-direction: column }` above — this
+// specific form is a compact code+button row, not a stack of fields, so it needs
+// the extra specificity of being scoped under .create-trip-panel too rather than
+// competing with that rule at equal specificity.
+.create-trip-panel .join-trip-form {
+  flex-direction: row;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+
+  input {
+    flex: 1;
+    min-width: 0;
+    text-transform: uppercase;
+  }
+
+  button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .scan-button {
+    width: 44px;
+    min-height: 44px;
+    padding: 0;
+    font-size: 1.2rem;
+    background: var(--color-tabs-bg);
+    color: var(--color-text);
+    border: 1px solid var(--color-input-border);
+  }
+}
+
+/* ---- Desktop: reuses the same card/avatar/balance-chip classes as mobile (all
+ * defined unscoped above), just arranged in a wider grid instead of a single column,
+ * with a page header/overall-card that fits the desktop `.page` container. ---- */
+
+.desktop-trips-page {
+  max-width: 960px;
+}
+
+.desktop-overall-card {
+  margin-bottom: 1.5rem;
+}
+
+.desktop-trip-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+  margin: 0;
+}
+
+.trip-card-link > .member-count {
+  display: block;
+  margin: 0.5rem 1rem 0;
+}
+
+.fab {
+  position: fixed;
+  right: 1.25rem;
+  /* Sits above the fixed bottom tab bar (app/shared/tab-bar.ts) plus its safe-area
+   * inset, same clearance logic as .mobile-page's bottom padding above. */
+  bottom: calc(4.75rem + var(--safe-area-bottom));
+  width: 56px;
+  height: 56px;
+  min-height: 0;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-accent);
+  color: var(--color-bg-page);
+  font-size: 1.75rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  z-index: 20;
+}

@@ -1,0 +1,402 @@
+using Microsoft.EntityFrameworkCore;
+using TripSplit.Api.Data;
+using TripSplit.Api.Dtos;
+using TripSplit.Api.Models;
+
+namespace TripSplit.Api.Services;
+
+public class ExpenseService : IExpenseService
+{
+    private static readonly string[] ValidSplitTypes = ["Equal", "Exact"];
+
+    // Purely cosmetic (icon/color in the UI) — kept as a fixed set rather than a free
+    // string so the frontend can reliably map every expense to a known tile/color.
+    private static readonly string[] ValidCategories = ["Lodging", "Transport", "Food", "Groceries", "Activities", "Other"];
+
+    private readonly AppDbContext _db;
+    private readonly IExchangeRateService _exchangeRateService;
+
+    public ExpenseService(AppDbContext db, IExchangeRateService exchangeRateService)
+    {
+        _db = db;
+        _exchangeRateService = exchangeRateService;
+    }
+
+    public async Task<ExpenseResponse> AddExpenseAsync(Guid tripId, Guid requestingUserId, CreateExpenseRequest request)
+    {
+        var trip = await _db.Trips
+            .Include(t => t.Members)
+            .SingleOrDefaultAsync(t => t.Id == tripId)
+            ?? throw new KeyNotFoundException("Trip not found.");
+
+        var requestingMember = trip.Members.SingleOrDefault(m => m.UserId == requestingUserId)
+            ?? throw new UnauthorizedAccessException("You are not a member of this trip.");
+
+        var currency = ValidateCurrency(request.Currency);
+        var originalShares = ValidateAndResolveShares(trip, request);
+        var (exchangeRate, convertedAmount, convertedShares) =
+            await ConvertToTripCurrencyAsync(trip, currency, request.Amount, originalShares);
+
+        var expense = new Expense
+        {
+            TripId = tripId,
+            PaidByTripMemberId = request.PaidByTripMemberId,
+            Description = request.Description.Trim(),
+            Amount = convertedAmount,
+            OriginalAmount = request.Amount,
+            Currency = currency,
+            ExchangeRate = exchangeRate,
+            SplitType = request.SplitType,
+            Category = request.Category,
+            ExpenseDate = request.ExpenseDate,
+            CreatedByTripMemberId = requestingMember.Id,
+        };
+
+        foreach (var (memberId, amountOwed) in convertedShares)
+        {
+            expense.Shares.Add(new ExpenseShare
+            {
+                TripMemberId = memberId,
+                AmountOwed = amountOwed,
+            });
+        }
+
+        _db.Expenses.Add(expense);
+        await _db.SaveChangesAsync();
+
+        return await MapToResponseAsync(expense.Id);
+    }
+
+    public async Task<ExpenseResponse> UpdateExpenseAsync(Guid tripId, Guid expenseId, Guid requestingUserId, CreateExpenseRequest request)
+    {
+        var trip = await _db.Trips
+            .Include(t => t.Members)
+            .SingleOrDefaultAsync(t => t.Id == tripId)
+            ?? throw new KeyNotFoundException("Trip not found.");
+
+        var requestingMember = trip.Members.SingleOrDefault(m => m.UserId == requestingUserId)
+            ?? throw new UnauthorizedAccessException("You are not a member of this trip.");
+
+        var expense = await _db.Expenses
+            .Include(e => e.Shares)
+            .SingleOrDefaultAsync(e => e.Id == expenseId && e.TripId == tripId)
+            ?? throw new KeyNotFoundException("Expense not found.");
+
+        // Either the person who logged it, or the trip owner (who's ultimately
+        // accountable for the trip's numbers and needs to be able to fix a
+        // member's mistake — e.g. someone leaves before a typo gets caught).
+        if (expense.CreatedByTripMemberId != requestingMember.Id && trip.OwnerId != requestingUserId)
+        {
+            throw new UnauthorizedAccessException("Only the person who added this expense, or the trip owner, can edit it.");
+        }
+
+        var currency = ValidateCurrency(request.Currency);
+        var originalShares = ValidateAndResolveShares(trip, request);
+        var (exchangeRate, convertedAmount, convertedShares) =
+            await ConvertToTripCurrencyAsync(trip, currency, request.Amount, originalShares);
+
+        expense.PaidByTripMemberId = request.PaidByTripMemberId;
+        expense.Description = request.Description.Trim();
+        expense.Amount = convertedAmount;
+        expense.OriginalAmount = request.Amount;
+        expense.Currency = currency;
+        expense.ExchangeRate = exchangeRate;
+        expense.SplitType = request.SplitType;
+        expense.Category = request.Category;
+        expense.ExpenseDate = request.ExpenseDate;
+
+        // Simplest correct way to replace a split: drop every old share row and
+        // re-add fresh ones from scratch, rather than trying to diff and patch
+        // individual rows (which split type/amount changes would make fiddly).
+        //
+        // Deliberately NOT calling expense.Shares.Clear() here (the previous version
+        // did, in addition to RemoveRange). ExpenseShare -> Expense is a required
+        // relationship, so clearing the navigation collection ALSO makes EF Core treat
+        // those rows as newly-orphaned and mark them for deletion via its own fixup —
+        // on top of the explicit RemoveRange already doing the same thing. That could
+        // produce a duplicate DELETE for the same row in one SaveChanges batch, which
+        // SQL Server reports as "expected 1 row, affected 0" the second time — exactly
+        // this exception. Only ever mark a row deleted through ONE path, not two.
+        _db.ExpenseShares.RemoveRange(expense.Shares);
+        foreach (var (memberId, amountOwed) in convertedShares)
+        {
+            _db.ExpenseShares.Add(new ExpenseShare
+            {
+                ExpenseId = expense.Id,
+                TripMemberId = memberId,
+                AmountOwed = amountOwed,
+            });
+        }
+
+        await _db.SaveChangesAsync();
+
+        return await MapToResponseAsync(expense.Id);
+    }
+
+    public async Task DeleteExpenseAsync(Guid tripId, Guid expenseId, Guid requestingUserId)
+    {
+        var trip = await _db.Trips
+            .Include(t => t.Members)
+            .SingleOrDefaultAsync(t => t.Id == tripId)
+            ?? throw new KeyNotFoundException("Trip not found.");
+
+        var requestingMember = trip.Members.SingleOrDefault(m => m.UserId == requestingUserId)
+            ?? throw new UnauthorizedAccessException("You are not a member of this trip.");
+
+        var expense = await _db.Expenses
+            .SingleOrDefaultAsync(e => e.Id == expenseId && e.TripId == tripId)
+            ?? throw new KeyNotFoundException("Expense not found.");
+
+        // Same creator-or-owner rule as UpdateExpenseAsync above.
+        if (expense.CreatedByTripMemberId != requestingMember.Id && trip.OwnerId != requestingUserId)
+        {
+            throw new UnauthorizedAccessException("Only the person who added this expense, or the trip owner, can delete it.");
+        }
+
+        // ExpenseShare rows cascade-delete with their parent Expense (configured in
+        // AppDbContext), so nothing else needs cleaning up here.
+        _db.Expenses.Remove(expense);
+        await _db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Shared validation for both creating and editing an expense: payer/participants
+    /// must be trip members, description/amount/split type must be well-formed, and
+    /// the split itself (equal or exact) must resolve to valid per-person amounts.
+    /// </summary>
+    private static List<(Guid MemberId, decimal AmountOwed)> ValidateAndResolveShares(Trip trip, CreateExpenseRequest request)
+    {
+        if (!trip.Members.Any(m => m.Id == request.PaidByTripMemberId))
+        {
+            throw new InvalidOperationException("The payer must be a member of this trip.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Description))
+        {
+            throw new InvalidOperationException("Description is required.");
+        }
+
+        if (request.Amount <= 0)
+        {
+            throw new InvalidOperationException("Amount must be greater than zero.");
+        }
+
+        if (!ValidSplitTypes.Contains(request.SplitType))
+        {
+            throw new InvalidOperationException("Split type must be 'Equal' or 'Exact'.");
+        }
+
+        if (!ValidCategories.Contains(request.Category))
+        {
+            throw new InvalidOperationException(
+                $"Category must be one of: {string.Join(", ", ValidCategories)}.");
+        }
+
+        if (request.Shares is null || request.Shares.Count == 0)
+        {
+            throw new InvalidOperationException("An expense must be split among at least one participant.");
+        }
+
+        // Each participant may appear at most once — a duplicate would otherwise create
+        // two separate ExpenseShare rows for the same member, silently double-counting
+        // their share of the expense.
+        if (request.Shares.Select(s => s.TripMemberId).Distinct().Count() != request.Shares.Count)
+        {
+            throw new InvalidOperationException("Each participant can only appear once in the split.");
+        }
+
+        var participantIds = request.Shares.Select(s => s.TripMemberId).Distinct().ToList();
+        var validMemberIds = trip.Members.Select(m => m.Id).ToHashSet();
+        if (!participantIds.All(validMemberIds.Contains))
+        {
+            throw new InvalidOperationException("All participants must be members of this trip.");
+        }
+
+        return ResolveShares(request.SplitType, request.Amount, request.Shares, participantIds);
+    }
+
+    private static string ValidateCurrency(string? currency)
+    {
+        if (string.IsNullOrWhiteSpace(currency) || currency.Trim().Length != 3)
+        {
+            throw new InvalidOperationException("Currency must be a 3-letter code (e.g. USD, EUR, MKD).");
+        }
+        return currency.Trim().ToUpperInvariant();
+    }
+
+    /// <summary>
+    /// Looks up (and freezes) the exchange rate from the expense's own currency to the
+    /// trip's settlement currency, then converts both the total and every individual
+    /// share into that currency. Converting shares individually and just multiplying
+    /// each by the rate would only sum back to the converted total by coincidence
+    /// (rounding each to the nearest cent independently accumulates drift) — so after
+    /// converting, any leftover cents from that drift get redistributed one at a time,
+    /// the same deterministic way BuildEqualShares already handles split remainders.
+    /// </summary>
+    private async Task<(decimal ExchangeRate, decimal ConvertedAmount, List<(Guid MemberId, decimal AmountOwed)> ConvertedShares)>
+        ConvertToTripCurrencyAsync(Trip trip, string currency, decimal originalAmount, List<(Guid MemberId, decimal AmountOwed)> originalShares)
+    {
+        var rate = await _exchangeRateService.GetRateAsync(currency, trip.SettlementCurrency);
+        var convertedAmount = Math.Round(originalAmount * rate, 2);
+
+        if (rate == 1m)
+        {
+            // Same currency — no conversion, no rounding drift to redistribute.
+            return (rate, convertedAmount, originalShares);
+        }
+
+        var converted = originalShares
+            .OrderBy(s => s.MemberId)
+            .Select(s => (s.MemberId, Amount: Math.Round(s.AmountOwed * rate, 2)))
+            .ToList();
+
+        var remainderCents = (int)Math.Round((convertedAmount - converted.Sum(c => c.Amount)) * 100m);
+
+        var result = new List<(Guid, decimal)>();
+        for (var i = 0; i < converted.Count; i++)
+        {
+            var amount = converted[i].Amount;
+            if (remainderCents > 0 && i < remainderCents)
+            {
+                amount += 0.01m;
+            }
+            else if (remainderCents < 0 && i < -remainderCents)
+            {
+                amount -= 0.01m;
+            }
+            result.Add((converted[i].MemberId, amount));
+        }
+
+        return (rate, convertedAmount, result);
+    }
+
+    public async Task<List<ExpenseResponse>> GetExpensesAsync(Guid tripId, Guid requestingUserId)
+    {
+        var trip = await _db.Trips
+            .Include(t => t.Members)
+            .SingleOrDefaultAsync(t => t.Id == tripId)
+            ?? throw new KeyNotFoundException("Trip not found.");
+
+        if (!trip.Members.Any(m => m.UserId == requestingUserId))
+        {
+            throw new UnauthorizedAccessException("You are not a member of this trip.");
+        }
+
+        // ExpenseDate alone isn't a unique ordering — most expenses get entered
+        // with today's date, so two same-day expenses would otherwise come back
+        // in whatever order the database happens to return ties in (not
+        // guaranteed to be insertion order). CreatedAt as a tiebreaker makes
+        // "most recently added" deterministic: newest first within the same day,
+        // matching what the frontend actually wants to show on top.
+        var expenseIds = await _db.Expenses
+            .Where(e => e.TripId == tripId)
+            .OrderByDescending(e => e.ExpenseDate)
+            .ThenByDescending(e => e.CreatedAt)
+            .Select(e => e.Id)
+            .ToListAsync();
+
+        var results = new List<ExpenseResponse>();
+        foreach (var id in expenseIds)
+        {
+            results.Add(await MapToResponseAsync(id));
+        }
+        return results;
+    }
+
+    /// <summary>
+    /// Dispatches to the right split calculation for the requested <paramref name="splitType"/>.
+    /// </summary>
+    private static List<(Guid MemberId, decimal AmountOwed)> ResolveShares(
+        string splitType,
+        decimal totalAmount,
+        List<ExpenseShareInput> shareInputs,
+        List<Guid> participantIds)
+    {
+        return splitType switch
+        {
+            "Exact" => BuildExactShares(totalAmount, shareInputs),
+            _ => BuildEqualShares(totalAmount, participantIds),
+        };
+    }
+
+    /// <summary>
+    /// Splits <paramref name="amount"/> equally among <paramref name="memberIds"/>.
+    /// Plain division almost never comes out even in cents (e.g. $10.00 / 3 = $3.33333...),
+    /// so this floors each share to the nearest cent, then hands the leftover cents out
+    /// one at a time — in a fixed, deterministic order (sorted by member id) — until the
+    /// shares sum to exactly the original amount. Same inputs always produce the same
+    /// split, which matters for tests and for anyone auditing the numbers later.
+    /// </summary>
+    private static List<(Guid MemberId, decimal AmountOwed)> BuildEqualShares(decimal amount, List<Guid> memberIds)
+    {
+        var ordered = memberIds.OrderBy(id => id).ToList();
+        var count = ordered.Count;
+
+        var baseShare = Math.Floor(amount / count * 100m) / 100m;
+        var allocated = baseShare * count;
+        var remainderCents = (int)Math.Round((amount - allocated) * 100m);
+
+        var result = new List<(Guid, decimal)>();
+        for (var i = 0; i < ordered.Count; i++)
+        {
+            var share = baseShare;
+            if (i < remainderCents)
+            {
+                share += 0.01m;
+            }
+            result.Add((ordered[i], share));
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Splits by the exact per-person amounts the caller provided (e.g. gas is $1000:
+    /// $500/$250/$250). Every participant must supply a positive amount, and the amounts
+    /// must add up to the expense total — enforced here, not just in the UI, since the
+    /// UI's validation can always be bypassed by calling the API directly.
+    /// </summary>
+    private static List<(Guid MemberId, decimal AmountOwed)> BuildExactShares(decimal totalAmount, List<ExpenseShareInput> shareInputs)
+    {
+        if (shareInputs.Any(s => s.Amount is null or <= 0))
+        {
+            throw new InvalidOperationException("Each participant's exact amount must be greater than zero.");
+        }
+
+        var sum = shareInputs.Sum(s => s.Amount!.Value);
+        if (Math.Abs(sum - totalAmount) > 0.01m)
+        {
+            throw new InvalidOperationException(
+                $"Exact amounts must add up to the total ({totalAmount:0.00}) — they currently sum to {sum:0.00}.");
+        }
+
+        return shareInputs.Select(s => (s.TripMemberId, s.Amount!.Value)).ToList();
+    }
+
+    private async Task<ExpenseResponse> MapToResponseAsync(Guid expenseId)
+    {
+        var expense = await _db.Expenses
+            .Include(e => e.PaidBy)
+            .Include(e => e.Shares).ThenInclude(s => s.TripMember)
+            .SingleAsync(e => e.Id == expenseId);
+
+        return new ExpenseResponse(
+            expense.Id,
+            expense.Description,
+            expense.Amount,
+            expense.OriginalAmount,
+            expense.Currency,
+            expense.ExchangeRate,
+            expense.ExpenseDate,
+            expense.PaidByTripMemberId,
+            expense.PaidBy!.DisplayName,
+            expense.SplitType,
+            expense.Shares.Select(s => new ExpenseShareResponse(
+                s.TripMemberId,
+                s.TripMember!.DisplayName,
+                s.AmountOwed
+            )).ToList(),
+            expense.Category,
+            expense.CreatedByTripMemberId
+        );
+    }
+}

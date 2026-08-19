@@ -1,0 +1,118 @@
+<div class="mobile-page">
+  <app-pull-to-refresh [refreshing]="isRefreshing()" (refresh)="refreshHome()">
+    <header class="mobile-header home-header">
+      <div class="greeting-block">
+        <span class="greeting">{{ greeting() }}</span>
+      </div>
+      <span class="header-actions">
+        <a routerLink="/notifications" class="bell-button" title="Notifications">
+          🔔
+          @if (appNotifications.unreadCount() > 0) {
+            <span class="bell-badge">{{ appNotifications.unreadCount() }}</span>
+          }
+        </a>
+        <a
+          routerLink="/profile"
+          class="user-avatar"
+          [style.background]="avatarColor(authService.currentUser()?.userId ?? '')"
+          title="Profile"
+        >
+          {{ initials(authService.currentUser()?.displayName ?? '?') }}
+        </a>
+      </span>
+    </header>
+
+    @if (loadError()) {
+      <p class="error">{{ loadError() }} <button type="button" class="link-button" (click)="loadTrips()">Retry</button></p>
+    }
+
+    @if (isLoading()) {
+      <div class="hero-card skeleton-hero" aria-hidden="true">
+        <span class="skeleton" style="width: 50%; height: 0.85rem;"></span>
+        <span class="skeleton" style="width: 70%; height: 2rem; margin-top: 0.5rem;"></span>
+      </div>
+    } @else {
+      <div class="hero-card" [class.negative]="overallNet() < 0">
+        <span class="label">Overall, you are {{ overallNet() >= 0 ? 'owed' : 'owe' }}</span>
+        <span class="amount">{{ (overallNet() < 0 ? -overallNet() : overallNet()) | number: '1.2-2' }}</span>
+        <div class="breakdown">
+          <span>You're owed <strong class="positive">{{ overallOwed() | number: '1.2-2' }}</strong></span>
+          <span>You owe <strong class="negative">{{ overallOwe() | number: '1.2-2' }}</strong></span>
+        </div>
+      </div>
+    }
+
+    <div class="section-heading">
+      <h2 class="section-label">Your latest trip</h2>
+      <a routerLink="/trips" class="link-button">See all</a>
+    </div>
+
+    @if (!isLoading() && !loadError() && latestTrip(); as trip) {
+      <div class="latest-trip-card">
+        <a [routerLink]="['/trips', trip.id]" class="latest-trip-top">
+          <span class="trip-name">{{ trip.name }}</span>
+          <span class="avatar-stack">
+            @for (member of trip.members.slice(0, 4); track member.tripMemberId) {
+              <span class="mini-avatar" [style.background]="avatarColor(member.tripMemberId)">{{
+                initials(member.displayName)
+              }}</span>
+            }
+            @if (trip.members.length > 4) {
+              <span class="mini-avatar avatar-overflow">+{{ trip.members.length - 4 }}</span>
+            }
+          </span>
+        </a>
+
+        @if (latestTripBalance() !== undefined) {
+          <a [routerLink]="['/trips', trip.id]" class="balance-chip"
+            [class.negative]="latestTripBalance()! < 0"
+            [class.settled]="latestTripBalance() === 0"
+          >
+            @if (latestTripBalance()! > 0) {
+              You are owed {{ latestTripBalance() | number: '1.2-2' }}
+            } @else if (latestTripBalance()! < 0) {
+              You owe {{ -latestTripBalance()! | number: '1.2-2' }}
+            } @else {
+              Settled up
+            }
+          </a>
+        }
+
+        <div class="latest-trip-actions">
+          <button type="button" (click)="openAddExpense(trip.id)">Add expense</button>
+          <button type="button" class="secondary" (click)="openSettleUp(trip.id)">Settle up</button>
+        </div>
+      </div>
+    } @else if (!isLoading() && !loadError()) {
+      <div class="empty-trip-card">
+        <p class="muted">No trips yet — head to the Trips tab to create or join one.</p>
+        <a routerLink="/trips" class="link-button">Go to Trips</a>
+      </div>
+    }
+
+    <div class="section-heading">
+      <h2 class="section-label">Recent activity</h2>
+      <a routerLink="/notifications" class="link-button">See all</a>
+    </div>
+
+    @if (recentActivity().length === 0) {
+      <p class="muted empty-note">Nothing here yet — you'll see it when someone pays you back, or when a trip has money sitting unsettled for a while.</p>
+    } @else {
+      <ul class="activity-list">
+        @for (n of recentActivity(); track n.id) {
+          <li class="activity-card" [class.unread]="!n.isRead">
+            <a [routerLink]="n.tripId ? ['/trips', n.tripId] : ['/friends']" class="activity-info">
+              <span class="activity-message">{{ n.message }}</span>
+              <span class="muted">
+                @if (n.tripName) {
+                  {{ n.tripName }} ·
+                }
+                {{ n.createdAt | date: 'MMM d' }}
+              </span>
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  </app-pull-to-refresh>
+</div>

@@ -1,0 +1,186 @@
+/* Retheme: matches the imported "Tally" design's auth-card treatment (Organic
+ * design system) — see mobile/PRODUCTION_REVIEW.md. Structure/logic untouched,
+ * only visuals. */
+:host {
+  display: flex;
+  align-items: center;
+  // justify-content centers the horizontal axis directly, instead of relying
+  // on .auth-card's own margin: auto to do it — that worked above 640px, but
+  // the @media (max-width: 640px) block below swaps the card's margin to a
+  // FIXED value for its vertical spacing, which also killed the auto
+  // horizontal centering that used to ride along with it. Anywhere the
+  // viewport was wider than the card but still under 640px (a resized
+  // browser window, a tablet), the card ended up flush-left instead of
+  // centered. justify-content here is the real, viewport-size-independent
+  // fix; .auth-card no longer needs any margin trick at all (see below).
+  justify-content: center;
+  /* vh fallback first, dvh overrides where supported — see the same pattern's
+   * explanation in styles.scss's .mobile-page. overflow-y so a short viewport
+   * (landscape phone, or the on-screen keyboard eating half the screen on
+   * register's taller form) scrolls the card into view instead of clipping it,
+   * since centered-with-flex has no fallback of its own for "content taller than
+   * viewport." */
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-y: auto;
+  padding: calc(2rem + var(--safe-area-top)) 1rem calc(2rem + var(--safe-area-bottom));
+}
+
+/* Logo lockup — a rounded gradient mark plus the Caprasimo wordmark, the same
+ * lockup on both Login and Register (and nowhere else — every other screen is
+ * already inside the app, this is the only place a first-time visitor needs
+ * to be told what app they're looking at). Replaces the earlier bare
+ * decorative circle, which had no name attached to it. */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1.75rem;
+}
+
+.brand-mark {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-2));
+  box-shadow: var(--shadow-sm);
+}
+
+.brand-name {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  color: var(--color-text);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  // No margin here anymore — :host's flex centering (align-items +
+  // justify-content, both set above) handles positioning on its own now, at
+  // every viewport size, so there's nothing left for a margin trick to do.
+  padding: 2.25rem 2rem;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  color: var(--color-text);
+
+  h1 {
+    margin: 0 0 0.4rem;
+    font-size: 1.7rem;
+  }
+
+  .tagline {
+    margin: 0 0 1.75rem;
+    color: var(--color-text-muted);
+    font-size: 0.92rem;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    font-weight: 600;
+  }
+
+  input {
+    font-size: 1rem;
+  }
+
+  button[type='submit'] {
+    margin-top: 0.25rem;
+    width: 100%;
+  }
+
+  .error {
+    margin: 0;
+    font-size: 0.88rem;
+  }
+
+  p {
+    margin: 1.5rem 0 0;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    text-align: center;
+
+    a {
+      color: var(--color-accent-600);
+      font-weight: 600;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+/* "or" divider between the email/password form and the guest option — a plain
+ * <hr> would need its own override to sit flush with .auth-card's padding, a
+ * flex row with a centered label is simpler and matches the rest of this
+ * card's spacing rhythm. */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+  }
+}
+
+.secondary-button {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.guest-name-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.field-hint {
+  font-size: 0.8rem;
+}
+
+.guest-hint {
+  margin: 0.75rem 0 0;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .auth-card {
+    // No margin override anymore either — see the base rule's comment. This
+    // block now only adjusts padding/touch-target sizing for small screens.
+    padding: 1.75rem 1.5rem;
+
+    input,
+    button {
+      min-height: 44px;
+      font-size: 1rem;
+    }
+  }
+}

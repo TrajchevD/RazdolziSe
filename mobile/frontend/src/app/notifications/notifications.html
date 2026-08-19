@@ -1,0 +1,57 @@
+<div class="mobile-page">
+  <header class="mobile-header notifications-header">
+    <a routerLink="/trips" class="icon-button">&larr;</a>
+    <h1>Notifications</h1>
+  </header>
+
+  @if (loadError()) {
+    <p class="error">{{ loadError() }} <button type="button" class="link-button" (click)="load()">Retry</button></p>
+  }
+
+  @if (isLoading()) {
+    <ul class="notification-list" aria-hidden="true">
+      @for (i of [1, 2, 3]; track i) {
+        <li class="notification-card">
+          <span class="skeleton" style="width: 70%; height: 1rem;"></span>
+          <span class="skeleton" style="width: 40%; height: 0.8rem; margin-top: 0.4rem;"></span>
+        </li>
+      }
+    </ul>
+  } @else if (notificationService.notifications().length === 0) {
+    <p class="muted empty-note">Nothing here yet — you'll see it when someone pays you back, or when a trip has money sitting unsettled for a while.</p>
+  } @else {
+    <ul class="notification-list">
+      @for (n of notificationService.notifications(); track n.id) {
+        <li class="notification-card" [class.unread]="!n.isRead">
+          <a [routerLink]="linkFor(n)" class="notification-info">
+            <span class="notification-message">{{ n.message }}</span>
+            <span class="muted">
+              @if (n.tripName) {
+                {{ n.tripName }} ·
+              }
+              {{ n.createdAt | date: 'MMM d' }}
+            </span>
+          </a>
+          @if (isMarkable(n.kind) && !n.isRead) {
+            <button
+              type="button"
+              class="dismiss-button"
+              [disabled]="busyId() === n.id"
+              (click)="dismiss(n.id)"
+              title="Mark as read"
+            >✓</button>
+          }
+          @if (isDeletable(n.kind) && n.isRead) {
+            <button
+              type="button"
+              class="delete-button"
+              [disabled]="busyId() === n.id"
+              (click)="remove(n.id)"
+              title="Delete notification"
+            >🗑</button>
+          }
+        </li>
+      }
+    </ul>
+  }
+</div>

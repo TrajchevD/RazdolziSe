@@ -1,0 +1,142 @@
+<div class="mobile-page">
+  <header class="mobile-header">
+    <h1>Friends</h1>
+  </header>
+
+  @if (loadError()) {
+    <p class="error">{{ loadError() }} <button type="button" class="link-button" (click)="load()">Retry</button></p>
+  }
+
+  <div class="search-card">
+    <form (ngSubmit)="search()">
+      <div class="search-row">
+        <input
+          type="text"
+          placeholder="Name#TAG"
+          name="searchQuery"
+          [(ngModel)]="searchQuery"
+          required
+        />
+        <button type="submit" [disabled]="isSearching()">{{ isSearching() ? '…' : 'Search' }}</button>
+        @if (scanSupported) {
+          <button type="button" class="scan-button" (click)="scanToSearch()" title="Scan a friend's QR code">📷</button>
+        }
+      </div>
+    </form>
+
+    @if (searchError()) {
+      <p class="error">{{ searchError() }}</p>
+    }
+
+    @if (searchResult(); as result) {
+      <div class="search-result">
+        <span class="mini-avatar" [style.background]="avatarColor(result.userId)">{{ initials(result.displayName) }}</span>
+        <div class="search-result-info">
+          <span class="friend-name">{{ result.displayName }}</span>
+          <span class="muted">#{{ result.tag }}</span>
+        </div>
+        <button type="button" [disabled]="isSendingRequest()" (click)="sendRequest(result)">
+          {{ isSendingRequest() ? 'Sending…' : 'Add' }}
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (isLoading()) {
+    <ul class="friend-list" aria-hidden="true">
+      @for (i of [1, 2]; track i) {
+        <li class="friend-card">
+          <span class="skeleton" style="width: 60%; height: 1rem;"></span>
+        </li>
+      }
+    </ul>
+  } @else {
+    @if (friendService.incomingRequests().length > 0 || tripInvites().length > 0) {
+      <h2 class="section-label">Requests</h2>
+      <ul class="invite-list">
+        @for (request of friendService.incomingRequests(); track request.id) {
+          <li class="invite-card">
+            <span class="mini-avatar" [style.background]="avatarColor(request.userId)">{{ initials(request.displayName) }}</span>
+            <div class="invite-info">
+              <span class="invite-name">{{ request.displayName }}</span>
+              <span class="muted">#{{ request.tag }}</span>
+            </div>
+            <div class="invite-actions">
+              <button
+                type="button"
+                class="accept-button"
+                [disabled]="busyId() === request.id"
+                (click)="acceptFriendRequest(request.id)"
+              >Accept</button>
+              <button
+                type="button"
+                class="secondary decline-button"
+                [disabled]="busyId() === request.id"
+                (click)="declineFriendRequest(request.id)"
+              >Decline</button>
+            </div>
+          </li>
+        }
+        @for (invite of tripInvites(); track invite.id) {
+          <li class="invite-card">
+            <span class="mini-avatar" [style.background]="avatarColor(invite.invitedByUserId)">{{
+              initials(invite.invitedByDisplayName)
+            }}</span>
+            <div class="invite-info">
+              <span class="invite-name">{{ invite.tripName }}</span>
+              <span class="muted">Invited by {{ invite.invitedByDisplayName }} · {{ invite.createdAt | date: 'MMM d' }}</span>
+            </div>
+            <div class="invite-actions">
+              <button
+                type="button"
+                class="accept-button"
+                [disabled]="busyId() === invite.id"
+                (click)="acceptTripInvite(invite)"
+              >Accept</button>
+              <button
+                type="button"
+                class="secondary decline-button"
+                [disabled]="busyId() === invite.id"
+                (click)="declineTripInvite(invite)"
+              >Decline</button>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (friendService.outgoingRequests().length > 0) {
+      <h2 class="section-label">Pending</h2>
+      <ul class="friend-list">
+        @for (request of friendService.outgoingRequests(); track request.id) {
+          <li class="friend-card">
+            <span class="mini-avatar" [style.background]="avatarColor(request.userId)">{{ initials(request.displayName) }}</span>
+            <div class="friend-info">
+              <span class="friend-name">{{ request.displayName }}</span>
+              <span class="muted">#{{ request.tag }}</span>
+            </div>
+            <button type="button" class="secondary" [disabled]="busyId() === request.id" (click)="decline(request.id)">Cancel</button>
+          </li>
+        }
+      </ul>
+    }
+
+    <h2 class="section-label">Your friends</h2>
+    @if (friendService.friends().length === 0) {
+      <p class="muted empty-note">No friends yet — search by their Name#TAG above, or add someone from a trip you share.</p>
+    } @else {
+      <ul class="friend-list">
+        @for (friend of friendService.friends(); track friend.userId) {
+          <li class="friend-card">
+            <span class="mini-avatar" [style.background]="avatarColor(friend.userId)">{{ initials(friend.displayName) }}</span>
+            <div class="friend-info">
+              <span class="friend-name">{{ friend.displayName }}</span>
+              <span class="muted">#{{ friend.tag }}</span>
+            </div>
+            <button type="button" class="secondary" [disabled]="busyId() === friend.userId" (click)="remove(friend.userId)">Remove</button>
+          </li>
+        }
+      </ul>
+    }
+  }
+</div>
