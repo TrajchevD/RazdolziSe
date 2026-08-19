@@ -2,5 +2,5 @@
 // (production is the default configuration for this project).
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://razdolzise.onrender.com/api',
+  apiBaseUrl: 'https://razdolzise-1.onrender.com/api',
 };
