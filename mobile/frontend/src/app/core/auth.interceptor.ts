@@ -1,7 +1,8 @@
 import { inject } from '@angular/core';
 import { HttpInterceptorFn } from '@angular/common/http';
-import { catchError, switchMap, throwError } from 'rxjs';
+import { Observable, catchError, finalize, share, switchMap, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
+import { AuthResponse } from './api.models';
 import { NotificationService } from './notification.service';
 
 const TOKEN_KEY = 'tripsplit_token';
@@ -16,6 +17,22 @@ const TOKEN_KEY = 'tripsplit_token';
  *  expired/revoked refresh token), and retrying a failed refresh by calling
  *  refresh() again would just recurse forever. */
 const AUTH_ENDPOINTS = ['/auth/login', '/auth/register', '/auth/guest', '/auth/refresh'];
+
+/** Shared across every concurrent 401, so a page that fires several requests at
+ *  once on load (trips/notifications/invites all loading together) triggers
+ *  exactly ONE call to /auth/refresh, not one per failed request. Refresh
+ *  tokens are single-use/rotating server-side (see AuthService.RefreshAsync's
+ *  doc comment on the backend) — without this de-dup, every one of those
+ *  concurrent 401s would read the same still-valid refresh token from
+ *  localStorage and fire its own refresh() call; only the first one the
+ *  server processes succeeds and rotates the token, and every other
+ *  concurrent call — still holding the now-stale token — gets rejected with
+ *  403, even though nothing was actually wrong. share() multicasts the single
+ *  in-flight HTTP call's result to every subscriber; finalize() clears the
+ *  slot once it settles so the next, unrelated 401 (e.g. minutes later, after
+ *  a genuine access-token expiry) correctly starts a fresh refresh instead of
+ *  reusing a stale completed one. */
+let refreshInFlight$: Observable<AuthResponse> | null = null;
 
 /** Attaches the JWT to every outgoing request. The 401 this actually exists to
  *  catch comes from ASP.NET's own JWT bearer middleware rejecting an expired
@@ -66,7 +83,16 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => err);
       }
 
-      return authService.refresh().pipe(
+      if (!refreshInFlight$) {
+        refreshInFlight$ = authService.refresh().pipe(
+          share(),
+          finalize(() => {
+            refreshInFlight$ = null;
+          }),
+        );
+      }
+
+      return refreshInFlight$.pipe(
         switchMap((res) => {
           const retried = req.clone({ setHeaders: { Authorization: `Bearer ${res.token}` } });
           return next(retried);
